@@ -27,7 +27,7 @@ h1 small{display:block;font:600 11px Inter;color:#94a3b8}
 main{display:grid;gap:12px;padding:0 14px 70px;grid-template-columns:1fr}
 @media(min-width:960px){main{grid-template-columns:1fr 340px}}
 #stage{position:relative;padding:8px}
-#lane{width:100%;aspect-ratio:16/10;display:block;border-radius:12px;touch-action:manipulation}
+#lane{width:min(100%,calc(50vh*1.6));aspect-ratio:16/10;display:block;margin:0 auto;border-radius:12px;touch-action:manipulation}
 #q{position:absolute;left:50%;top:14px;transform:translateX(-50%);text-align:center;background:rgba(8,17,38,.75);border:1px solid var(--gold2);border-radius:16px;padding:4px 26px;pointer-events:none}
 #q .w{font:700 clamp(40px,8vw,84px)/1.5 Amiri,serif;color:var(--gold);direction:rtl}
 #q .h{font-size:12px;color:#cbd5e1;margin-top:-6px;padding-bottom:4px}
@@ -35,10 +35,10 @@ main{display:grid;gap:12px;padding:0 14px 70px;grid-template-columns:1fr}
 #toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #toast.bad{background:rgba(120,30,30,.92)}
 #toast .ar{font:700 30px Amiri,serif}
-#answers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
-.ans{padding:6px;border-radius:16px;background:linear-gradient(160deg,var(--em),#043d2e);border:2px solid var(--gold2);font:700 clamp(40px,7vw,64px)/1.3 Amiri,serif;color:#fff}
+#answers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;position:sticky;bottom:calc(44px + env(safe-area-inset-bottom,0px));z-index:6;padding:8px;border-radius:16px;background:rgba(8,17,38,.94);border:1px solid rgba(212,175,55,.4)}
+.ans{padding:6px;border-radius:16px;background:linear-gradient(160deg,var(--em),#043d2e);border:2px solid var(--gold2);font:700 clamp(34px,6vw,52px)/1.2 Amiri,serif;color:#fff}
 .ans:hover:not(:disabled){transform:translateY(-3px);border-color:var(--gold)}
-.ans:disabled{opacity:.45;cursor:default}.ans.pick{outline:4px solid var(--gold);opacity:1}
+.ans:disabled{opacity:.45;cursor:default}.ans.pick{outline:4px solid var(--gold);opacity:1;background:var(--gold);color:#201400}
 aside{display:flex;flex-direction:column;gap:10px}
 #camBox{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:12px;background:#000;margin:8px}
 #camBox video,#camBox canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);object-fit:cover}
@@ -242,7 +242,7 @@ function nextQ(){
 function pick(d,b){
  if(phase!=='question')return;sfx('click');picked=d;b.classList.add('pick');
  document.querySelectorAll('.ans').forEach(x=>x.disabled=true);
- phase='ready';pst='low';status(camOn?'🏃 SEDIAKAN TANGAN... hayun ke hadapan!':'🏃 SEDIAKAN TANGAN... tekan Baling Maya');
+ phase='ready';pst='low';armAt=performance.now()+2000;lowSince=0;status('Pilihan anda: '+AD[d]+' — '+(camOn?'🏃 SEDIAKAN TANGAN... hayun ke hadapan!':'🏃 SEDIAKAN TANGAN... tekan Baling Maya'));
 }
 function doThrow(a,speed){
  if(phase!=='ready')return;phase='rolling';pst='cool';
@@ -290,7 +290,7 @@ $('tOk').onclick=()=>{S={name:$('sName').value.trim(),q:+$('sQ').value,pin:+$('s
  $('mT').classList.remove('on');if(!G||phase==='idle'){$('rd').textContent='0/'+S.q;$('tm').textContent=S.time>0?Math.floor(S.time/60)+':00':'∞'}};
 
 /* ---------- MEDIAPIPE POSE ---------- */
-let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0;
+let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0,armAt=0,lowSince=0,aimLock=0;
 const ov=$('ov'),oc=ov.getContext('2d');
 $('bCam').onclick=async()=>{
  initAudio();if(camOn)return;
@@ -315,11 +315,12 @@ function onPose(r){
  const dt=(now-prev.t)/1000;if(dt<=0)return;
  const v=[(prev.y[0]-L[15].y)/dt,(prev.y[1]-L[16].y)/dt];prev={t:now,y:[L[15].y,L[16].y]};
  const s=v[0]>v[1]?0:1,w=L[15+s],sh=L[11+s],vv=v[s];
- if(pst==='low'){if(w.y>sh.y+.08){pst='armed';status('✋ Tangan sedia — HAYUN!')}}
- else if(pst==='armed'){if(vv>1){pst='swing';peak=vv;swingT=now}else if(w.y<sh.y)pst='low'}
+ if(now<armAt){pst='low';lowSince=0;return}
+ if(pst==='low'){if(w.y>sh.y+.12){if(!lowSince)lowSince=now;else if(now-lowSince>700){pst='armed';status('✋ Tangan sedia — laras arah, kemudian HAYUN!')}}else lowSince=0}
+ else if(pst==='armed'){if(w.y>sh.y)setAim(aim*.7+(sh.x-w.x)*4*.3);if(vv>1.8){pst='swing';peak=vv;swingT=now;aimLock=aim}else if(w.y<sh.y){pst='low';lowSince=0}}
  else if(pst==='swing'){
   peak=Math.max(peak,vv);
-  if(w.y<sh.y+.03&&vv>.5){doThrow((sh.x-w.x)*4,peak)}
+  if(w.y<sh.y&&now-swingT>150&&peak>1.8){doThrow(aimLock,peak)}
   else if(now-swingT>1200)pst='low';
  }
 }
