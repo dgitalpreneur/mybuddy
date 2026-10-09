@@ -1,369 +1,83 @@
 <!DOCTYPE html>
-<html lang="ms"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Arabic Number Bowling AI — لعبة بولينغ الأعداد</title>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@500;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<html lang="ms"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#081126"><title>Arabic Number Bowling AI | Patchwork Click</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600;700;800&family=Tajawal:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script><script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-:root{--navy:#081126;--em:#064e3b;--em2:#10b981;--gold:#f59e0b;--gold2:#D4AF37;--glass:rgba(255,255,255,.07);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--navy);color:#f1f5f9;font-family:Inter,Tajawal,system-ui,sans-serif}
-body{background:radial-gradient(circle at 20% 0,#0b3b34 0,transparent 45%),var(--navy);min-height:100vh}
-body:before{content:"";position:fixed;inset:0;opacity:.07;pointer-events:none;background:repeating-conic-gradient(from 22.5deg at 50% 50%,#D4AF37 0 2deg,transparent 2deg 45deg);background-size:90px 90px}
-button{font:inherit;cursor:pointer;border:0;color:inherit}
-.glass{background:var(--glass);border:1px solid rgba(212,175,55,.3);border-radius:16px;backdrop-filter:blur(8px)}
-header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 14px;position:relative}
-h1{margin:0;font-family:Amiri,serif;font-size:clamp(18px,3vw,28px);color:var(--gold2)}
-h1 small{display:block;font:600 11px Inter;color:#94a3b8}
-.stats{display:flex;gap:8px;flex-wrap:wrap}
-.chip{padding:6px 12px;border-radius:999px;background:var(--glass);border:1px solid rgba(212,175,55,.3);font-weight:800;font-size:14px}
-.chip b{color:var(--gold)}
-.btn{padding:8px 14px;border-radius:12px;background:var(--em);border:1px solid var(--em2);font-weight:600;font-size:14px}
-.btn:hover{background:#0a6b52}.btn.gold{background:var(--gold);color:#201400;border-color:var(--gold2)}
-.btn:focus-visible,.ans:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-main{display:grid;gap:12px;padding:0 14px 70px;grid-template-columns:1fr}
-@media(min-width:960px){main{grid-template-columns:1fr 340px}}
-#stage{position:relative;padding:8px}
-#lane{width:min(100%,calc(50vh*1.6));aspect-ratio:16/10;display:block;margin:0 auto;border-radius:12px;touch-action:manipulation}
-#q{position:absolute;left:50%;top:14px;transform:translateX(-50%);text-align:center;background:rgba(8,17,38,.75);border:1px solid var(--gold2);border-radius:16px;padding:4px 26px;pointer-events:none}
-#q .w{font:700 clamp(40px,8vw,84px)/1.5 Amiri,serif;color:var(--gold);direction:rtl}
-#q .h{font-size:12px;color:#cbd5e1;margin-top:-6px;padding-bottom:4px}
-#toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;text-align:center;padding:14px 26px;border-radius:18px;background:rgba(6,78,59,.92);border:2px solid var(--gold);transition:.35s;pointer-events:none;font-weight:800;min-width:220px}
-#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
-#toast.bad{background:rgba(120,30,30,.92)}
-#toast .ar{font:700 30px Amiri,serif}
-#answers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;position:sticky;bottom:calc(44px + env(safe-area-inset-bottom,0px));z-index:6;padding:8px;border-radius:16px;background:rgba(8,17,38,.94);border:1px solid rgba(212,175,55,.4)}
-.ans{padding:6px;border-radius:16px;background:linear-gradient(160deg,var(--em),#043d2e);border:2px solid var(--gold2);font:700 clamp(34px,6vw,52px)/1.2 Amiri,serif;color:#fff}
-.ans:hover:not(:disabled){transform:translateY(-3px);border-color:var(--gold)}
-.ans:disabled{opacity:.45;cursor:default}.ans.pick{outline:4px solid var(--gold);opacity:1;background:var(--gold);color:#201400}
-aside{display:flex;flex-direction:column;gap:10px}
-#camBox{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:12px;background:#000;margin:8px}
-#camBox video,#camBox canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);object-fit:cover}
-#camMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;padding:10px;color:#94a3b8}
-#status{padding:12px;text-align:center;font-weight:800;font-size:16px;color:var(--gold)}
-.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:0 8px 10px}
-.modal{position:fixed;inset:0;background:rgba(3,8,20,.8);display:none;align-items:center;justify-content:center;padding:14px;z-index:20}
-.modal.on{display:flex}
-.card{max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:20px;background:#0b1a33;border:1px solid var(--gold2);border-radius:20px}
-.card h2{margin:0 0 12px;font-family:Amiri,serif;color:var(--gold2);font-size:26px}
-label{display:block;margin:10px 0 4px;font-size:13px;color:#cbd5e1}
-input[type=text],select{width:100%;padding:9px;border-radius:10px;border:1px solid #334155;background:#0f2442;color:#fff;font:inherit}
-.tg{display:flex;align-items:center;gap:8px;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px;border-bottom:1px solid #1e3a5f;text-align:left}
-.big{font:800 44px Inter;color:var(--gold)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.grid2 div{background:var(--glass);border-radius:12px;padding:8px;font-size:13px}.grid2 b{display:block;font-size:20px;color:var(--em2)}
-#wm{position:fixed;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:right;font:700 12px/1.2 Inter;color:var(--gold2);opacity:.9;pointer-events:none;z-index:30;text-shadow:0 1px 4px #000}
-#wm span{display:block;font-weight:400;color:#cbd5e1;font-size:10px}
-html,body{height:100%;overflow:hidden}
-body{display:flex;flex-direction:column;height:100dvh}
-header{margin:6px 8px!important;padding:6px 10px;flex:none}
-h1{font-size:clamp(14px,2.4vw,22px)}h1 small{display:none}
-.chip{padding:3px 9px;font-size:12px}.btn{padding:6px 10px;font-size:13px}
-main{flex:1;min-height:0;padding:0 8px calc(34px + env(safe-area-inset-bottom,0px));grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;gap:6px}
-section{display:flex;flex-direction:column;min-height:0;gap:6px}
-#stage{flex:1;min-height:0;padding:4px}
-#lane{width:100%;height:100%;aspect-ratio:auto;object-fit:contain;margin:0}
-#q{top:6px;padding:0 20px}#q .w{font-size:clamp(26px,min(5vw,7vh),56px);line-height:1.35}#q .h{display:none}
-#answers{position:static;margin:0;padding:6px;gap:8px;flex:none}
-.ans{font-size:clamp(30px,7vh,52px);padding:2px}
-.ans.hov{transform:scale(1.06);border-color:var(--gold);box-shadow:0 0 0 4px rgba(245,158,11,.5)}
-aside{flex-direction:row;gap:6px;max-height:30vh;overflow:hidden}
-aside>.glass{flex:1;min-width:0}
-#camBox{height:13vh;width:auto;max-width:100%;margin:4px auto}
-#status{padding:6px;font-size:13px}.row{padding:0 4px 6px;gap:4px}
-#cursor{position:fixed;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:4px solid var(--gold);background:rgba(245,158,11,.25);pointer-events:none;z-index:50;display:none}
-#cursor.pinch{background:var(--em2);transform:scale(.7)}
-@media(min-width:800px){main{grid-template-columns:1fr 250px;grid-template-rows:minmax(0,1fr)}aside{flex-direction:column;max-height:none;overflow:auto}#camBox{height:auto;margin:6px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style></head>
-<body>
-<header class="glass" style="margin:10px 14px">
- <h1>ARABIC NUMBER BOWLING AI — لعبة بولينغ الأعداد<small>Baling bola, jatuhkan pin, kuasai nombor Arab ١–١٠</small></h1>
- <div class="stats">
-  <span class="chip">Markah <b id="sc">0</b></span>
-  <span class="chip">Soalan <b id="rd">0/20</b></span>
-  <span class="chip">Masa <b id="tm">∞</b></span>
- </div>
- <div class="stats">
-  <button class="btn" id="bAud">🔊 Audio ON</button>
-  <button class="btn" id="bLb">🏆 Papan</button>
-  <button class="btn gold" id="bT">⚙ Mod Guru</button>
- </div>
-</header>
-<main>
- <section>
-  <div id="stage" class="glass">
-   <canvas id="lane" width="960" height="600"></canvas>
-   <div id="q"><div class="w" id="qw">—</div><div class="h">Pilih angka yang betul, kemudian baling!</div></div>
-   <div id="toast"></div>
-  </div>
-  <div id="answers"></div>
- </section>
- <aside>
-  <div class="glass">
-   <div id="camBox"><video id="vid" playsinline muted></video><canvas id="ov" width="480" height="360"></canvas><div id="camMsg">Kamera AI belum aktif.<br>Anda masih boleh bermain dengan butang / sentuh skrin.</div></div>
-   <div class="row"><button class="btn" id="bCam">📷 Aktifkan Kamera</button></div>
-  </div>
-  <div class="glass"><div id="status">Tekan "Mula Main"</div>
-   <div class="row">
-    <button class="btn" id="bL" aria-label="Arah kiri">⬅ Kiri</button>
-    <button class="btn gold" id="bThrow">🎳 Baling Maya</button>
-    <button class="btn" id="bR" aria-label="Arah kanan">Kanan ➡</button>
-   </div>
-   <div class="row" style="font-size:13px;color:#cbd5e1">Arah: <b id="aimv" style="color:var(--gold)">Tengah</b></div>
-   <div class="row"><button class="btn gold" id="bStart">▶ Mula Main</button></div>
-  </div>
- </aside>
-</main>
-
-<div class="modal" id="mT"><div class="card"><h2>Mod Guru</h2>
- <label>Nama Murid / Kelas</label><input type="text" id="sName" placeholder="cth: Aisyah 3 Cemerlang">
- <label>Jumlah Soalan</label><select id="sQ"><option>10</option><option selected>20</option><option>30</option></select>
- <label>Markah Setiap Pin</label><select id="sP"><option>5</option><option selected>10</option><option>20</option></select>
- <label>Pemasa</label><select id="sT"><option value="120">2 minit</option><option value="180">3 minit</option><option value="300">5 minit</option><option value="0" selected>Tanpa had masa</option></select>
- <label>Tahap Hayunan</label><select id="sD"><option value="easy">EASY — zon pin lebih lebar</option><option value="normal" selected>NORMAL — ikut arah tangan</option><option value="challenge">CHALLENGE — sangat sensitif</option></select>
- <div class="tg"><input type="checkbox" id="sTr"><label style="margin:0" for="sTr">Mod Latihan (rekod tidak disimpan)</label></div>
- <div class="row" style="margin-top:16px"><button class="btn gold" id="tOk">Simpan &amp; Tutup</button></div></div></div>
-
-<div class="modal" id="mL"><div class="card"><h2>Papan Pendahulu — Top 10</h2><div id="lbBody"></div>
- <div class="row" style="margin-top:14px"><button class="btn" id="lbDel">🗑 Padam Rekod</button><button class="btn gold" id="lbOk">Tutup</button></div></div></div>
-
-<div class="modal" id="mG"><div class="card" style="text-align:center"><h2>Permainan Tamat! 🎉</h2>
- <div class="big" id="gScore">0</div><div id="gBest" style="color:#cbd5e1"></div>
- <div class="grid2" id="gStats"></div>
- <div class="row"><button class="btn gold" id="gAgain">Main Semula</button><button class="btn" id="gLb">Papan Pendahulu</button></div></div></div>
-
-<div id="cursor"></div>
-<div id="wm">Patchwork Click<span>Educational Game</span></div>
-
+:root{color-scheme:dark;--gold:#f59e0b;--green:#10b981}*{box-sizing:border-box}body{margin:0;background:#081126;color:#f3f7fc;font-family:Inter,Arial,sans-serif;background-image:linear-gradient(30deg,#10b98106 12%,transparent 12.5%,transparent 87%,#10b98106 87.5%),linear-gradient(150deg,#10b98106 12%,transparent 12.5%,transparent 87%,#10b98106 87.5%);background-size:90px 156px}button,input,select{font:inherit}button{cursor:pointer;border:1px solid #ffffff20;color:inherit;background:#ffffff0a;border-radius:12px;padding:11px 15px;transition:transform .15s,background .15s}button:hover:not(:disabled){background:#ffffff19;transform:translateY(-2px)}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}button:disabled{opacity:.4;cursor:default}.primary{background:#10b981;color:#05291e;border:0;font-weight:800}.gold{background:#f59e0b;color:#271b04;font-weight:800;border:0}.arabic{font-family:Amiri,Tajawal,serif;direction:rtl}.wrap{max-width:1440px;margin:auto;padding:22px 26px 75px}header{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #ffffff12;padding-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.brand-icon{width:46px;height:46px;display:grid;place-items:center;font-size:27px;background:#10b98120;border-radius:13px;border:1px solid #10b98150}h1{font-size:18px;letter-spacing:.03em;margin:0}small,.muted{color:#9faec5}.actions{display:flex;gap:8px;flex-wrap:wrap}.hero{display:flex;align-items:center;justify-content:space-between;margin:20px 0 16px}.hero h2{font-size:26px;margin:0 0 5px}.tag{font-size:11px;letter-spacing:.14em;color:#55ddbb;margin-bottom:9px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.stat,.panel{background:linear-gradient(135deg,#ffffff09,#ffffff03);border:1px solid #ffffff16;border-radius:19px;backdrop-filter:blur(12px)}.stat{padding:14px 18px}.stat small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.stat strong{font-size:26px;display:block;margin-top:5px}.gamegrid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(290px,1fr);gap:18px}.lane-panel{position:relative;overflow:hidden}.lane-heading{padding:17px 20px;display:flex;justify-content:space-between;font-size:12px}.pill{color:#6ee7b7;border:1px solid #10b98140;padding:5px 9px;border-radius:30px;background:#064e3b66;font-size:11px}#lane{display:block;width:100%;height:auto;aspect-ratio:760/590;touch-action:none;cursor:crosshair}.lane-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px;border-top:1px solid #ffffff12}.aim-control{display:flex;align-items:center;gap:8px}.aim-control button{padding:8px 13px}.side{display:flex;flex-direction:column;gap:15px}.question{padding:23px;text-align:center}#word{font-size:clamp(54px,6vw,80px);line-height:1.6;color:#fff1ca;margin:4px 0 0;min-height:125px}#practiceHint{min-height:20px;font-size:12px;color:#6ee7b7}.answers{display:flex;gap:12px;justify-content:center;margin-top:15px}.answer{font-family:Amiri,serif;font-size:40px;min-width:75px;flex:1;padding:6px}.answer.selected{background:#f59e0b22;border:2px solid #f59e0b;opacity:1;color:#fcd34d}.answer.correct{background:#10b98130;border-color:#10b981;opacity:1}.camera-panel{padding:15px}.camera-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px}.camera-view{aspect-ratio:16/9;background:#050d1e;border-radius:12px;overflow:hidden;position:relative}.camera-view video,.camera-view canvas{position:absolute;width:100%;height:100%;object-fit:contain;transform:scaleX(-1)}.camera-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:8px;color:#94a3b8;font-size:12px;padding:15px}.camera-empty b{font-size:25px}.camera-guide{margin-top:10px;font-size:11px;color:#9faec5;line-height:1.7}.status{padding:15px 18px;font-weight:600;min-height:58px;border-left:3px solid var(--green);font-size:13px}.toast{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);padding:20px 28px;border-radius:20px;background:#081126ee;border:1px solid #f59e0b80;text-align:center;width:80%;pointer-events:none;box-shadow:0 10px 60px #0008}.toast strong{display:block;font-size:30px;color:#fcd34d}.toast p{margin:8px 0;font-size:14px}.toast.show{animation:pop .35s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,-50%) scale(.7)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}[hidden]{display:none!important}.watermark{position:fixed;bottom:12px;right:18px;padding:8px 15px;border-radius:10px;background:#081126ed;border:1px solid #D4AF3744;color:#D4AF37;z-index:100;text-align:right;font-size:12px;pointer-events:none}.watermark span{display:block;font-size:9px;letter-spacing:.12em;color:#bcc6d3}.overlay{position:fixed;inset:0;background:#020617d9;backdrop-filter:blur(9px);z-index:50;display:grid;place-items:center;padding:22px;overflow:auto}.modal{width:min(620px,100%);max-height:90vh;overflow:auto;padding:27px;background:#111e35;border:1px solid #ffffff24;border-radius:24px;box-shadow:0 25px 100px #0009}.modal h2{margin:0 0 8px;font-size:24px}.modal p{line-height:1.7}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0}label{display:block;color:#b7c7da;font-size:12px}input,select{display:block;width:100%;margin-top:7px;background:#081126;border:1px solid #ffffff25;border-radius:10px;padding:12px;color:white}label.check{display:flex;align-items:center;gap:9px}label.check input{width:18px;margin:0;accent-color:#10b981}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}.intro-icon{font-size:54px}.intro{text-align:center}.steps{display:flex;gap:8px;margin:24px 0}.steps div{flex:1;padding:14px 8px;border:1px solid #ffffff18;border-radius:12px;font-size:12px}.steps b{display:block;font-size:23px;margin-bottom:8px}.results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.results div{padding:15px;background:#ffffff06;border-radius:12px}.results strong{font-size:25px;display:block;color:#fcd34d}.results small{font-size:12px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{text-align:left;padding:11px 5px;border-bottom:1px solid #ffffff16}th{color:#9faec5}.board-scroll{overflow-x:auto}.notice{color:#fbbf24;font-size:12px}footer{margin-top:16px;font-size:11px;color:#778aa8;display:flex;justify-content:space-between;gap:10px}.progress{height:4px;background:#ffffff0c;border-radius:4px;margin-top:14px}.progress div{height:100%;background:#10b981;border-radius:4px;transition:width .4s}@media(max-width:900px){.wrap{padding:14px 14px 75px}.gamegrid{grid-template-columns:1fr 310px}h1{font-size:14px}.hero h2{font-size:21px}.question{padding:16px}#word{font-size:60px}}@media(max-width:700px){header{align-items:flex-start}.actions button{font-size:11px;padding:8px}.brand small{display:none}.hero .arabic{display:none}.gamegrid{grid-template-columns:1fr}.side{display:contents}.question{grid-row:1}.lane-panel{grid-row:2}.camera-panel{grid-row:4}.status{grid-row:3}.stats{gap:7px}.stat{padding:11px}.stat strong{font-size:20px}.stat small{font-size:9px}#word{min-height:94px;font-size:64px;line-height:1.4}.answer{font-size:34px}.camera-view{max-height:240px}.formgrid{gap:12px}.hero{margin:15px 0}.lane-foot{flex-wrap:wrap}.watermark{right:10px;bottom:8px}.steps{flex-direction:column}.steps div{padding:10px}.steps b{display:inline;margin-right:9px}footer{flex-direction:column}}
+</style></head><body>
+<div class="wrap"><header><div class="brand"><div class="brand-icon">🎳</div><div><h1>ARABIC NUMBER BOWLING <span style="color:#34d399">AI</span></h1><small>Belajar • Pilih • Hayun • Strike!</small></div></div><nav class="actions"><button id="audioBtn" aria-pressed="true">🔊 Audio ON</button><button id="boardBtn">🏆 Rekod</button><button id="teacherBtn">⚙ Mod Guru</button></nav></header>
+<section class="hero"><div><div class="tag">PLAY • MOVE • LEARN</div><h2>Nombor Arab, balingan hebat.</h2><small id="playerLabel">Murid · Kelas</small></div><div class="arabic" style="font-size:28px;color:#D4AF37">لعبة بولينغ الأعداد</div></section>
+<div class="stats"><div class="stat"><small>Markah</small><strong id="score">0</strong></div><div class="stat"><small>Soalan</small><strong id="round">0 / 20</strong></div><div class="stat"><small>Pin tumbang</small><strong id="pinsTotal">0</strong></div><div class="stat"><small>Baki masa</small><strong id="timer">3:00</strong></div></div>
+<main class="gamegrid"><section class="panel lane-panel"><div class="lane-heading"><span>🎳 LORONG EMERALD</span><span id="modeBadge" class="pill">NORMAL</span></div><canvas id="lane" width="760" height="590" aria-label="Lorong bowling. Pilih jawapan kemudian sentuh lorong untuk membaling." tabindex="0"></canvas><div id="toast" class="toast" role="status" hidden></div><div class="lane-foot"><div class="aim-control"><button id="leftBtn" aria-label="Arah kiri">◀</button><span id="aimLabel" style="font-size:12px;min-width:85px;text-align:center">Tengah</span><button id="rightBtn" aria-label="Arah kanan">▶</button></div><button id="throwBtn" class="gold" disabled>🎳 Baling Maya</button></div></section>
+<aside class="side"><section class="panel question"><small id="questionLabel">Pilih angka yang sepadan</small><div id="word" class="arabic" lang="ar">وَاحِدٌ</div><div id="practiceHint"></div><div id="answers" class="answers"></div><div class="progress"><div id="progress" style="width:0%"></div></div></section><section class="panel camera-panel"><div class="camera-head"><span>📷 AI MOTION CAMERA</span><button id="cameraBtn" style="padding:6px 9px;font-size:11px">Aktifkan kamera</button></div><div class="camera-view"><video id="video" playsinline muted></video><canvas id="skeleton" width="640" height="360"></canvas><div id="cameraEmpty" class="camera-empty"><b>🙋</b><span id="cameraMessage">Tunjukkan bahu, siku dan tangan.<br>Kaki tidak perlu kelihatan.</span></div></div><div id="tracking" class="camera-guide">Rendahkan tangan → hayun pantas ke paras bahu.<br>Baling Maya tersedia bila-bila masa selepas memilih jawapan.</div></section><div id="status" class="panel status" role="status" aria-live="polite">Selamat datang! Tekan Mula Bermain.</div></aside></main><footer><span>١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩ ١٠ · Belajar nombor 1–10</span><span>Kawalan: ← → arah · Space baling · Kamera pilihan</span></footer></div>
+<div class="watermark">Patchwork Click<span>Educational Game</span></div>
+<div id="welcome" class="overlay"><section class="modal intro"><div class="intro-icon">🎳</div><div class="tag">ARABIC NUMBER BOWLING AI</div><h2>Jom belajar sambil bergerak!</h2><p class="arabic" lang="ar" style="font-size:30px;color:#fcd34d">لعبة بولينغ الأعداد</p><p class="muted">Baca perkataan Arab, pilih nombor dan jatuhkan pin.<br>Setiap pin bernilai <b id="introPoints">10</b> markah.</p><div class="steps"><div><b>١</b>Pilih jawapan</div><div><b>٢</b>Hayun / baling maya</div><div><b>٣</b>Kumpul markah</div></div><p style="font-size:12px" class="muted">Betul: markah penuh. Kurang tepat: separuh markah.<br>Pastikan ruang tangan lapang. Kamera pilihan, permainan tetap boleh dimainkan tanpa kamera.</p><button id="startBtn" class="primary" style="width:100%">Mula Bermain ✨</button><button id="welcomeTeacher" style="margin-top:12px;width:100%">Tetapan Murid & Mod Guru</button><p style="font-size:10px" class="muted">Internet diperlukan untuk pustaka dan model kamera. Kamera diproses dalam pelayar.</p></section></div>
+<div id="teacher" class="overlay" hidden><section class="modal"><h2>⚙ Mod Guru</h2><p class="muted" style="font-size:12px">Tetapan digunakan untuk permainan baharu. Menyimpan akan memulakan semula sesi semasa.</p><form id="settingsForm"><div class="formgrid"><label>Nama murid<input name="name" maxlength="50" value="Murid"></label><label>Kelas<input name="className" maxlength="40" placeholder="Contoh: 1 Cemerlang"></label><label>Jumlah soalan<select name="questions"><option>10</option><option selected>20</option><option>30</option></select></label><label>Markah setiap pin<select name="pinValue"><option>5</option><option selected>10</option><option>20</option></select></label><label>Pemasa<select name="duration"><option value="120">2 minit</option><option value="180" selected>3 minit</option><option value="300">5 minit</option><option value="0">Tanpa had masa</option></select></label><label>Kesukaran hayunan<select name="difficulty"><option value="EASY">EASY · Zon lebih lebar</option><option selected value="NORMAL">NORMAL · Arah sebenar</option><option value="CHALLENGE">CHALLENGE · Lebih sensitif</option></select></label><label class="check"><input type="checkbox" name="camera">Kamera AI</label><label class="check"><input type="checkbox" name="practice">Mod Latihan</label></div><p class="muted" style="font-size:11px">Mod Latihan memaparkan petunjuk jawapan dan tidak dimasukkan ke papan pendahulu. Sesi dijeda semasa panel terbuka.</p><div class="modal-actions"><button type="button" id="closeTeacher">Batal</button><button class="primary" type="submit">Simpan & Mula</button></div></form></section></div>
+<div id="leaderboard" class="overlay" hidden><section class="modal"><h2>🏆 Papan Pendahulu</h2><p class="muted" style="font-size:12px">10 markah tertinggi pada pelayar ini. Tetapan permainan ditunjukkan untuk perbandingan.</p><div class="board-scroll"><table><thead><tr><th># / Murid</th><th>Markah</th><th>Pin / Tepat</th><th>Tetapan / Tarikh</th></tr></thead><tbody id="boardRows"></tbody></table></div><p id="storageNote" class="notice"></p><div class="modal-actions"><button id="clearBoard">Padam rekod</button><button id="closeBoard" class="primary">Tutup</button></div></section></div>
+<div id="gameOver" class="overlay" hidden><section class="modal intro"><div class="intro-icon">🏆</div><h2>Hebat, teruskan belajar!</h2><p id="endReason" class="muted"></p><div id="resultStats" class="results"></div><p id="personalBest" style="color:#6ee7b7"></p><p id="saveNote" class="notice"></p><div class="modal-actions" style="justify-content:center"><button id="endBoard">Lihat Rekod</button><button id="againBtn" class="primary">Main Lagi 🎳</button></div></section></div>
 <script>
-const AW=['وَاحِدٌ','اِثْنَانِ','ثَلَاثَةٌ','أَرْبَعَةٌ','خَمْسَةٌ','سِتَّةٌ','سَبْعَةٌ','ثَمَانِيَةٌ','تِسْعَةٌ','عَشَرَةٌ'];
-const AD=['١','٢','٣','٤','٥','٦','٧','٨','٩','١٠'];
-const $=id=>document.getElementById(id);
-let S={name:'',q:20,pin:10,time:0,diff:'normal',train:false};
-try{Object.assign(S,JSON.parse(localStorage.getItem('abb_set')||'{}'))}catch(e){}
-let G=null,phase='idle',cur=null,picked=null,aim=0,ball=null,pins=[],last=-1,timerId=null,nextT=null,audioOn=true;
-
-/* ---------- AUDIO ---------- */
-let A=null;
-function initAudio(){
- if(A||!window.Tone)return;
- try{Tone.start();
- A={poly:new Tone.PolySynth(Tone.Synth,{volume:-10}).toDestination(),
- pink:new Tone.NoiseSynth({noise:{type:'pink'},envelope:{attack:.05,decay:.9,sustain:.2,release:.3},volume:-22}).toDestination(),
- crash:new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.25,sustain:0},volume:-12}).toDestination(),
- buzz:new Tone.Synth({oscillator:{type:'sawtooth'},volume:-14}).toDestination()};}catch(e){A=null}
-}
-function sfx(n){
- if(!audioOn||!A)return;const t=Tone.now();
- try{
- if(n==='click')A.poly.triggerAttackRelease('C5','16n',t);
- else if(n==='roll')A.pink.triggerAttackRelease(1.1,t);
- else if(n==='crash'){A.crash.triggerAttackRelease('8n',t);A.poly.triggerAttackRelease(['A6','E7'],'32n',t+.02)}
- else if(n==='strike')['C4','E4','G4','C5','E5','G5'].forEach((x,i)=>A.poly.triggerAttackRelease(x,'8n',t+i*.1));
- else if(n==='ok')['E5','G5','C6'].forEach((x,i)=>A.poly.triggerAttackRelease(x,'16n',t+i*.1));
- else if(n==='bad'){A.buzz.triggerAttackRelease('Eb4','8n',t);A.buzz.triggerAttackRelease('C4','4n',t+.18)}
- else if(n==='fan')[['C5',0],['E5',.15],['G5',.3],['C6',.5]].forEach(([x,d])=>A.poly.triggerAttackRelease([x,'G4'],'8n',t+d));
- }catch(e){}
-}
-$('bAud').onclick=()=>{initAudio();audioOn=!audioOn;$('bAud').textContent=audioOn?'🔊 Audio ON':'🔇 Audio OFF';sfx('click')};
-
-/* ---------- LANE CANVAS ---------- */
-const cv=$('lane'),cx=cv.getContext('2d'),W=960,H=600;
-const Y0=H*.94,Y1=H*.34;
-function P(x,z){const s=1-.52*z,hw=W*.33*s;return{x:W/2+x*hw,y:Y0-(Y0-Y1)*z,s}}
-function poly(pts,fill){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();cx.fillStyle=fill;cx.fill()}
-function drawLane(){
- cx.clearRect(0,0,W,H);
- let g=cx.createLinearGradient(0,0,0,Y1);g.addColorStop(0,'#04101f');g.addColorStop(1,'#0a3a30');cx.fillStyle=g;cx.fillRect(0,0,W,H);
- cx.fillStyle='#052e24';cx.fillRect(0,Y1-40,W,60);
- cx.strokeStyle='#D4AF37';cx.globalAlpha=.5;cx.lineWidth=2;
- for(let i=0;i<9;i++){const x=60+i*105;cx.beginPath();cx.arc(x,Y1-10,34,0,7);cx.stroke();cx.beginPath();cx.moveTo(x-34,Y1-10);cx.lineTo(x+34,Y1-10);cx.moveTo(x,Y1-44);cx.lineTo(x,Y1+24);cx.stroke()}
- cx.globalAlpha=1;cx.fillStyle='#D4AF37';cx.font='700 34px Amiri';cx.textAlign='center';cx.fillText('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',W/2,Y1-52);
- poly([P(-1.2,0),P(1.2,0),P(1.2,1),P(-1.2,1)],'#111827');
- g=cx.createLinearGradient(0,Y1,0,Y0);g.addColorStop(0,'#b9803f');g.addColorStop(1,'#e0a65a');
- poly([P(-1,0),P(1,0),P(1,1),P(-1,1)],g);
- cx.lineWidth=1;cx.strokeStyle='rgba(90,50,10,.45)';
- for(let i=-6;i<=6;i++){const a=P(i/6,0),b=P(i/6,1);cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke()}
- cx.fillStyle='rgba(60,35,10,.8)';
- [-.6,-.4,-.2,0,.2,.4,.6].forEach((x,i)=>{const z=.38+Math.abs(x)*.12,p=P(x,z),q=P(x,z+.05);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-6*p.s,q.y+8);cx.lineTo(p.x+6*p.s,q.y+8);cx.fill()});
- g=cx.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,'rgba(255,255,255,.2)');g.addColorStop(1,'rgba(255,255,255,0)');
- poly([P(-1,0),P(1,0),P(1,1),P(-1,1)],g);
- cx.strokeStyle='#D4AF37';cx.lineWidth=3;cx.beginPath();[[-1,-1],[1,1]].forEach(([x])=>{const a=P(x,0),b=P(x,1);cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y)});cx.stroke();
- cx.lineWidth=1;cx.beginPath();const l0=P(-1,.1),l1=P(1,.1);cx.moveTo(l0.x,l0.y);cx.lineTo(l1.x,l1.y);cx.stroke();
- if(phase==='ready'){const p=P(aim*.45,.2),q=P(aim*.45,.55);cx.strokeStyle='#10b981';cx.lineWidth=4;cx.setLineDash([10,8]);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke();cx.setLineDash([])}
-}
-function drawPin(p){
- const o=P(p.x,p.z),h=100*o.s,w=18*o.s;
- cx.save();cx.globalAlpha=p.a;cx.translate(o.x,o.y);
- cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(0,0,w*1.2,w*.4,0,0,7);cx.fill();
- cx.rotate(p.r);
- let g=cx.createLinearGradient(-w,0,w,0);g.addColorStop(0,'#cfd6e0');g.addColorStop(.4,'#fff');g.addColorStop(1,'#aab3c2');cx.fillStyle=g;
- cx.beginPath();cx.moveTo(-w*.45,0);cx.bezierCurveTo(-w*1.3,-h*.3,-w*.3,-h*.55,-w*.35,-h*.75);cx.arc(0,-h*.88,w*.42,Math.PI,0);cx.bezierCurveTo(w*.3,-h*.55,w*1.3,-h*.3,w*.45,0);cx.fill();
- cx.fillStyle='#c62828';cx.fillRect(-w*.5,-h*.72,w,h*.05);cx.fillRect(-w*.48,-h*.64,w*.96,h*.04);
- cx.restore();
-}
-function drawBall(ball){
- if(!ball)return;const o=P(ball.x,ball.z),r=34*o.s;
- cx.save();cx.globalAlpha=ball.a;
- cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(o.x+4,o.y+2,r,r*.3,0,0,7);cx.fill();
- const cy=o.y-r;let g=cx.createRadialGradient(o.x-r*.35,cy-r*.4,r*.1,o.x,cy,r);g.addColorStop(0,'#6ea8ff');g.addColorStop(.35,'#1d3a8a');g.addColorStop(1,'#050b22');
- cx.fillStyle=g;cx.beginPath();cx.arc(o.x,cy,r,0,7);cx.fill();
- cx.fillStyle='#02050f';for(let i=0;i<3;i++){const a=ball.spin+i*.5,hx=o.x+Math.cos(a)*r*.4,hy=cy-r*.1+Math.sin(a)*r*.25;cx.beginPath();cx.arc(hx,hy,r*.1,0,7);cx.fill()}
- cx.fillStyle='rgba(255,255,255,.6)';cx.beginPath();cx.ellipse(o.x-r*.35,cy-r*.45,r*.18,r*.1,-.6,0,7);cx.fill();cx.restore();
-}
-function setPins(){pins=[];for(let r=0;r<4;r++)for(let i=0;i<=r;i++)pins.push({x:(i-r/2)*.12,z:.86+r*.03,r:0,a:1,down:false,vx:0,vz:0,vr:0,t:0})}
-function hitR(){return S.diff==='easy'?.15:S.diff==='challenge'?.075:.1}
-function knock(p,vx,vz){if(p.down)return;p.down=true;p.vx=vx;p.vz=vz;p.vr=(Math.random()-.5)*14;p.t=0;sfx('crash')}
-let lt=0;
-function loop(ts){
- const dt=Math.min(.05,(ts-lt)/1000||0);lt=ts;
- if(ball&&ball.on){
-  ball.z+=ball.v*dt;ball.x=ball.ax*Math.pow((ball.z-.05)/.9,1.2);ball.spin+=dt*14;
-  pins.forEach(p=>{if(!p.down&&Math.abs(ball.z-p.z)<.025&&Math.abs(ball.x-p.x)<hitR())knock(p,(p.x-ball.x)*2.5+(Math.random()-.5)*.1,.15+Math.random()*.2)});
-  if(ball.z>=1){ball.on=false;ball.fade=true}
- }
- if(ball&&ball.fade){ball.a-=dt*2;ball.z+=dt*.3;if(ball.a<=0){ball=null}}
- pins.forEach(p=>{if(p.down){p.t+=dt;p.x+=p.vx*dt;p.z+=p.vz*dt;p.r+=p.vr*dt;p.vr*=.97;p.vx*=.97;p.vz*=.97;
-  if(p.t>1.3)p.a=Math.max(0,p.a-dt*1.5);
-  if(p.t<.8&&(Math.abs(p.vx)+Math.abs(p.vz))>.05)pins.forEach(o=>{if(!o.down&&Math.hypot(o.x-p.x,(o.z-p.z)*3)<.09)knock(o,(o.x-p.x)*3+(Math.random()-.5)*.1,.1+Math.random()*.15)})}});
- if(phase==='rolling'&&!ball&&pins.every(p=>!p.down||p.t>1.3))resolve();
- drawLane();[...pins].sort((a,b)=>b.z-a.z).forEach(drawPin);drawBall(ball||((phase==='question'||phase==='ready')?{x:aim*.3,z:.05,a:1,spin:0}:null));
- requestAnimationFrame(loop);
-}
-
-/* ---------- GAME FLOW ---------- */
-function status(t){$('status').textContent=t}
-function aimTxt(){return Math.abs(aim)<.15?'Tengah':aim<0?'Kiri':'Kanan'}
-function setAim(v){aim=Math.max(-1,Math.min(1,v));$('aimv').textContent=aimTxt()}
-function mult(){return S.diff==='easy'?.7:S.diff==='challenge'?1.6:1}
-function startGame(){
- initAudio();sfx('click');clearTimeout(nextT);clearInterval(timerId);
- G={score:0,i:0,ok:0,bad:0,pins:0,left:S.time};
- $('mG').classList.remove('on');
- if(S.time>0)timerId=setInterval(()=>{G.left--;showT();if(G.left<=0){clearInterval(timerId);if(phase!=='rolling')endGame();else G.over=true}},1000);
- showHUD();nextQ();
-}
-function showT(){$('tm').textContent=S.time>0?Math.floor(G.left/60)+':'+String(G.left%60).padStart(2,'0'):'∞'}
-function showHUD(){$('sc').textContent=G?G.score:0;$('rd').textContent=(G?G.i:0)+'/'+S.q;showT()}
-function nextQ(){
- if(G.i>=S.q||G.over||(S.time>0&&G.left<=0)){endGame();return}
- let k;do{k=Math.floor(Math.random()*10)}while(k===last);last=k;
- const o=[k];while(o.length<3){const d=Math.floor(Math.random()*10);if(!o.includes(d))o.push(d)}
- o.sort(()=>Math.random()-.5);
- cur={k,o};picked=null;G.i++;setPins();ball=null;setAim(0);phase='question';
- $('qw').textContent=AW[k];$('answers').innerHTML='';
- o.forEach(d=>{const b=document.createElement('button');b.className='ans';b.textContent=AD[d];b.setAttribute('aria-label','Jawapan '+(d+1));b.onclick=()=>pick(d,b);$('answers').appendChild(b)});
- status(camOn?'🤏 Gerakkan tangan, CUBIT jari pada jawapan':'🎯 Pilih jawapan anda');showHUD();
-}
-function pick(d,b){
- if(phase!=='question')return;sfx('click');picked=d;b.classList.add('pick');$('cursor').style.display='none';document.querySelectorAll('.ans').forEach(a=>a.classList.remove('hov'));
- document.querySelectorAll('.ans').forEach(x=>x.disabled=true);
- phase='ready';pst='low';armAt=performance.now()+2000;lowSince=0;status('Pilihan anda: '+AD[d]+' — '+(camOn?'🏃 SEDIAKAN TANGAN... hayun ke hadapan!':'🏃 SEDIAKAN TANGAN... tekan Baling Maya'));
-}
-function doThrow(a,speed){
- if(phase!=='ready')return;phase='rolling';pst='cool';
- ball={x:0,z:.05,v:.7+Math.min(.7,speed*.25),ax:Math.max(-1,Math.min(1,a))*.45*mult(),a:1,spin:0,on:true};
- status('🎳 Bola bergolek...');sfx('roll');
-}
-function resolve(){
- phase='result';const n=pins.filter(p=>p.down).length,ok=picked===cur.k;
- let pts=n*S.pin;if(!ok)pts=Math.round(pts/2);
- G.score+=pts;G.pins+=n;ok?G.ok++:G.bad++;
- const t=$('toast');t.className='on'+(ok?'':' bad');
- t.innerHTML=(n===10?'🎳 STRIKE!<br>':'')+(ok?'<div class="ar">صحيح ✔</div>':'<div class="ar">إجابة غير صحيحة</div>Jawapan betul: <span class="ar">'+AD[cur.k]+' — '+AW[cur.k]+'</span><br>')+'<br>Pin jatuh: '+n+' · +'+pts+' markah'+(ok?'':' (50%)');
- if(n===10)sfx('strike');ok?sfx('ok'):sfx('bad');
- status(ok?'✅ Betul!':'❌ Kurang tepat');showHUD();
- nextT=setTimeout(()=>{t.className='';nextQ()},3000);
-}
-function endGame(){
- clearInterval(timerId);phase='idle';sfx('fan');$('toast').className='';
- const tot=G.ok+G.bad,acc=tot?Math.round(G.ok/tot*100):0;
- let best=G.score;const lb=getLB();lb.filter(r=>r.name===(S.name||'Murid')).forEach(r=>best=Math.max(best,r.score));
- if(!S.train&&tot>0){lb.push({name:S.name||'Murid',score:G.score,pins:G.pins,acc,date:new Date().toLocaleDateString('ms-MY')});lb.sort((a,b)=>b.score-a.score);try{localStorage.setItem('abb_lb',JSON.stringify(lb.slice(0,50)))}catch(e){}}
- $('gScore').textContent=G.score;$('gBest').textContent='Rekod tertinggi peribadi: '+best+(S.train?' (Mod Latihan — tidak disimpan)':'');
- $('gStats').innerHTML=`<div>Betul<b>${G.ok}</b></div><div>Salah<b>${G.bad}</b></div><div>Pin tumbang<b>${G.pins}</b></div><div>Ketepatan<b>${acc}%</b></div>`;
- $('mG').classList.add('on');status('Permainan tamat');
- try{confetti({particleCount:160,spread:90,origin:{y:.6},colors:['#f59e0b','#10b981','#D4AF37','#fff']})}catch(e){}
-}
-function getLB(){try{return JSON.parse(localStorage.getItem('abb_lb')||'[]')}catch(e){return[]}}
-function showLB(){
- const l=getLB().slice(0,10);
- $('lbBody').innerHTML=l.length?'<table><tr><th>#</th><th>Nama</th><th>Markah</th><th>Pin</th><th>Tepat</th><th>Tarikh</th></tr>'+l.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td><b>${r.score}</b></td><td>${r.pins}</td><td>${r.acc}%</td><td>${esc(r.date)}</td></tr>`).join('')+'</table>':'<p>Belum ada rekod. Mainkan satu pusingan dahulu!</p>';
- $('mL').classList.add('on');
-}
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-
-/* ---------- CONTROLS ---------- */
-$('bStart').onclick=startGame;$('gAgain').onclick=startGame;
-$('bL').onclick=()=>{sfx('click');setAim(aim-.25)};$('bR').onclick=()=>{sfx('click');setAim(aim+.25)};
-$('bThrow').onclick=()=>doThrow(aim,1);
-cv.addEventListener('pointerdown',e=>{if(phase!=='ready')return;const r=cv.getBoundingClientRect(),sc=Math.min(r.width/W,r.height/H),ox=(r.width-W*sc)/2;setAim((((e.clientX-r.left-ox)/(W*sc))-.5)*2.2);doThrow(aim,1)});
-$('bLb').onclick=showLB;$('gLb').onclick=()=>{$('mG').classList.remove('on');showLB()};$('lbOk').onclick=()=>$('mL').classList.remove('on');
-$('lbDel').onclick=()=>{if(confirm('Padam semua rekod?')){localStorage.removeItem('abb_lb');showLB()}};
-$('bT').onclick=()=>{$('sName').value=S.name;$('sQ').value=S.q;$('sP').value=S.pin;$('sT').value=S.time;$('sD').value=S.diff;$('sTr').checked=S.train;$('mT').classList.add('on')};
-$('tOk').onclick=()=>{S={name:$('sName').value.trim(),q:+$('sQ').value,pin:+$('sP').value,time:+$('sT').value,diff:$('sD').value,train:$('sTr').checked};
- try{localStorage.setItem('abb_set',JSON.stringify(S))}catch(e){}
- $('mT').classList.remove('on');if(!G||phase==='idle'){$('rd').textContent='0/'+S.q;$('tm').textContent=S.time>0?Math.floor(S.time/60)+':00':'∞'}};
-
-/* ---------- MEDIAPIPE POSE ---------- */
-let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0,armAt=0,lowSince=0,aimLock=0,hands=null,pinched=false,hx=0,hy=0,lastB=null;
-function onHands(r){
- const c=$('cursor'),h=r.multiHandLandmarks&&r.multiHandLandmarks[0];
- oc.clearRect(0,0,480,360);
- if(!h||phase!=='question'){c.style.display='none';pinched=false;document.querySelectorAll('.ans').forEach(a=>a.classList.remove('hov'));return}
- oc.fillStyle='#f59e0b';h.forEach(p=>{oc.beginPath();oc.arc(p.x*480,p.y*360,4,0,7);oc.fill()});
- const t=h[4],i=h[8],m=h[9],w0=h[0],sz=Math.hypot(w0.x-m.x,w0.y-m.y)||.1,d=Math.hypot(t.x-i.x,t.y-i.y)/sz;
- const px=m.x,py=m.y;
- const sx=Math.max(0,Math.min(1,((1-px)-.2)/.6))*innerWidth,sy=innerHeight/2;
- hx=hx*.5+sx*.5;hy=hy*.5+sy*.5;
- const on=pinched?d<.55:d<.38;
- c.style.display='block';c.style.left=hx+'px';c.style.top=hy+'px';c.classList.toggle('pinch',on);
- let b=null,bd=1e9;document.querySelectorAll('.ans').forEach(a=>{const q=a.getBoundingClientRect(),dd=Math.abs((q.left+q.right)/2-hx);if(dd<bd){bd=dd;b=a}});if(!on)lastB=b;if(b){const q=b.getBoundingClientRect();c.style.top=((q.top+q.bottom)/2)+'px'}
- document.querySelectorAll('.ans').forEach(a=>a.classList.toggle('hov',a===b));
- status(on?'🤏 Cubit dikesan!':'✋ Tangan dikesan — cubit untuk pilih '+(b?b.textContent:''));const tb=lastB||b;if(on&&!pinched&&tb&&!tb.disabled){c.style.display='none';tb.click()}
- pinched=on;
-}
-const ov=$('ov'),oc=ov.getContext('2d');
-$('bCam').onclick=async()=>{
- initAudio();if(camOn)return;
- try{
-  if(!window.Pose||!window.Camera)throw new Error('lib');
-  $('camMsg').textContent='Memuatkan model AI...';
-  pose=new Pose({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+f});
-  pose.setOptions({modelComplexity:0,smoothLandmarks:true,minDetectionConfidence:.5,minTrackingConfidence:.5});
-  pose.onResults(onPose);
-  try{hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});hands.onResults(onHands);hands.initialize().catch(()=>{hands=null})}catch(e){hands=null}
-  cam=new Camera($('vid'),{onFrame:async()=>{try{if(phase==='question'&&hands)await hands.send({image:$('vid')});else await pose.send({image:$('vid')})}catch(e){if(hands&&phase==='question'){hands=null;status('Pinch tidak tersedia — sentuh jawapan')}}},width:480,height:360});
-  await cam.start();camOn=true;$('camMsg').style.display='none';$('bCam').textContent='📷 Kamera AKTIF';
- }catch(e){const n=(e&&e.name)||'';const why=n==='NotAllowedError'?'Kebenaran kamera ditolak atau disekat oleh halaman (iframe). Buka pautan terus dalam tab baharu pada Chrome, kemudian tekan Benarkan.':n==='NotFoundError'?'Tiada kamera dijumpai pada peranti ini.':n==='NotReadableError'?'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi itu dan cuba lagi.':e&&e.message==='lib'?'Pustaka AI gagal dimuatkan. Semak sambungan internet.':'Ralat: '+(n||e)+'. Pastikan halaman dibuka melalui HTTPS.';$('camMsg').style.display='flex';$('camMsg').innerHTML='Kamera tidak dapat dibuka.<br>'+why+'<br><br>Anda masih boleh bermain dengan butang Baling Maya atau sentuh lorong.'}
-};
-function onPose(r){
- oc.clearRect(0,0,480,360);const L=r.poseLandmarks;if(!L)return;
- oc.strokeStyle='#10b981';oc.lineWidth=4;oc.shadowColor='#10b981';oc.shadowBlur=10;
- [[11,13],[13,15],[12,14],[14,16],[11,12]].forEach(([a,b])=>{oc.beginPath();oc.moveTo(L[a].x*480,L[a].y*360);oc.lineTo(L[b].x*480,L[b].y*360);oc.stroke()});
- oc.fillStyle='#f59e0b';[11,12,13,14,15,16].forEach(i=>{oc.beginPath();oc.arc(L[i].x*480,L[i].y*360,6,0,7);oc.fill()});
- const now=performance.now();
- if(phase!=='ready'){prev={t:now,y:[L[15].y,L[16].y]};return}
- if(!prev){prev={t:now,y:[L[15].y,L[16].y]};return}
- const dt=(now-prev.t)/1000;if(dt<=0)return;
- const v=[(prev.y[0]-L[15].y)/dt,(prev.y[1]-L[16].y)/dt];prev={t:now,y:[L[15].y,L[16].y]};
- const s=v[0]>v[1]?0:1,w=L[15+s],sh=L[11+s],vv=v[s];
- if(now<armAt){pst='low';lowSince=0;return}
- if(pst==='low'){if(w.y>sh.y+.12){if(!lowSince)lowSince=now;else if(now-lowSince>700){pst='armed';status('✋ Tangan sedia — laras arah, kemudian HAYUN!')}}else lowSince=0}
- else if(pst==='armed'){if(w.y>sh.y)setAim(aim*.7+(sh.x-w.x)*4*.3);if(vv>1.8){pst='swing';peak=vv;swingT=now;aimLock=aim}else if(w.y<sh.y){pst='low';lowSince=0}}
- else if(pst==='swing'){
-  peak=Math.max(peak,vv);
-  if(w.y<sh.y&&now-swingT>150&&peak>1.8){doThrow(aimLock,peak)}
-  else if(now-swingT>1200)pst='low';
- }
-}
-status('Tekan "Mula Main"');
-$('rd').textContent='0/'+S.q;
-setPins();requestAnimationFrame(loop);
+'use strict';
+// Reference APIs: chuoling.github.io/mediapipe/solutions/pose and tonejs.github.io/docs/14.8.15
+const NUMBERS=[['١','وَاحِدٌ'],['٢','اِثْنَانِ'],['٣','ثَلَاثَةٌ'],['٤','أَرْبَعَةٌ'],['٥','خَمْسَةٌ'],['٦','سِتَّةٌ'],['٧','سَبْعَةٌ'],['٨','ثَمَانِيَةٌ'],['٩','تِسْعَةٌ'],['١٠','عَشَرَةٌ']].map((a,i)=>({digit:a[0],word:a[1],value:i+1}));
+const $=id=>document.getElementById(id), clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), shuffle=a=>a.map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.v);
+const KEY='patchwork-arabic-bowling-records-v1', SETTINGS='patchwork-arabic-bowling-settings-v1';let storageOK=true;
+function readStore(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch(e){storageOK=false;return fallback}}
+function writeStore(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){storageOK=false;return false}}
+let config={name:'Murid',className:'',questions:20,pinValue:10,duration:180,difficulty:'NORMAL',camera:false,practice:false};
+const saved=readStore(SETTINGS,{}); if(saved&&typeof saved==='object'){for(const k of ['name','className'])if(typeof saved[k]==='string')config[k]=saved[k].slice(0,50);for(const [k,vals]of Object.entries({questions:[10,20,30],pinValue:[5,10,20],duration:[0,120,180,300],difficulty:['EASY','NORMAL','CHALLENGE']}))if(vals.includes(saved[k]))config[k]=saved[k];config.practice=saved.practice===true;config.camera=saved.camera===true}
+let records=readStore(KEY,[]);records=Array.isArray(records)?records.filter(r=>r&&typeof r.name==='string'&&Number.isFinite(r.score)).slice(0,10):[];
+let state='IDLE',round=0,score=0,totalPins=0,correct=0,wrong=0,current=null,selected=null,lastQuestion=-1,aim=0,ball=null,pins=[],nextAt=0,deadline=0,timeExpired=false,pausedAt=0,modalDepth=0,lastFrame=performance.now(),lastHit=0;
+let audioOn=true,audio=null;
+async function unlockAudio(){if(!audioOn||!window.Tone)return;try{await Tone.start();if(!audio){const poly=new Tone.PolySynth(Tone.Synth,{envelope:{attack:.003,decay:.18,sustain:0,release:.25},volume:-15}).toDestination();const noise=new Tone.NoiseSynth({noise:{type:'pink'},envelope:{attack:.01,decay:.16,sustain:0,release:.12},volume:-18}).toDestination();const roll=new Tone.Noise('pink').toDestination();roll.volume.value=-32;audio={poly,noise,roll,rolling:false}}}catch(e){}}
+function stopRoll(){if(audio?.rolling){audio.roll.stop();audio.rolling=false}}
+function sound(type){if(!audioOn||!audio)return;try{const t=Tone.now();if(type==='roll'){if(!audio.rolling){audio.roll.start();audio.rolling=true}}else if(type==='hit'){audio.noise.triggerAttackRelease(.13,t);audio.poly.triggerAttackRelease(['C6','F#6','A6'],.06,t)}else{const notes={click:['C5'],correct:['E5','G5','C6'],wrong:['Eb4','C4'],strike:['C5','E5','G5','C6'],end:['C5','E5','G5','C6','G5','C6']}[type]||[];notes.forEach((n,i)=>audio.poly.triggerAttackRelease(n,.11,t+i*.12))}}catch(e){}}
+function status(t){$('status').textContent=t}function setState(s){state=s;$('throwBtn').disabled=s!=='READY';$('leftBtn').disabled=!['READY','QUESTION'].includes(s);$('rightBtn').disabled=!['READY','QUESTION'].includes(s)}
+function updateHud(){ $('score').textContent=score;$('round').textContent=round+' / '+config.questions;$('pinsTotal').textContent=totalPins;$('progress').style.width=((round?round-1:0)/config.questions*100)+'%';$('playerLabel').textContent=config.name+(config.className?' · '+config.className:'')+(config.practice?' · Latihan':'');$('modeBadge').textContent=config.difficulty+(config.practice?' · LATIHAN':'');$('introPoints').textContent=config.pinValue;updateTimer()}
+function updateTimer(){const remain=config.duration?Math.max(0,Math.ceil((deadline-(pausedAt||performance.now()))/1000)):0;$('timer').textContent=config.duration?(state==='IDLE'?Math.floor(config.duration/60)+':00':Math.floor(remain/60)+':'+String(remain%60).padStart(2,'0')):'∞'}
+function resetPins(){pins=[];for(let row=0;row<4;row++)for(let col=0;col<=row;col++)pins.push({x:(col-row/2)*.26,z:3.1+row*.26,vx:0,vz:0,down:false,fall:0,angle:0,spin:0});ball=null}
+function nextQuestion(){if(timeExpired||round>=config.questions){finish(timeExpired?'Masa tamat':'Semua soalan selesai');return}round++;let idx;do{idx=Math.floor(Math.random()*10)}while(idx===lastQuestion);lastQuestion=idx;current=NUMBERS[idx];selected=null;aim=0;updateAim();resetPins();$('toast').hidden=true;$('word').textContent=current.word;$('practiceHint').textContent=config.practice?'Petunjuk: '+current.digit+' = '+current.value:'';$('answers').replaceChildren();let choices=shuffle([current,...shuffle(NUMBERS.filter(n=>n.value!==current.value)).slice(0,2)]);choices.forEach(n=>{let b=document.createElement('button');b.className='answer';b.textContent=n.digit;b.dataset.value=n.value;b.setAttribute('aria-label','Nombor '+n.value);b.onclick=()=>choose(n.value);$('answers').append(b)});resetMotion();setState('QUESTION');status('📖 Baca perkataan Arab dan pilih satu angka.');updateHud()}
+function choose(value){if(state!=='QUESTION'||modalDepth)return;unlockAudio();sound('click');selected=value;for(const b of $('answers').children){b.disabled=true;if(Number(b.dataset.value)===value)b.classList.add('selected')}setState('READY');status('🏃 SEDIAKAN TANGAN... Rendahkan tangan, kemudian hayun. Atau tekan Baling Maya.');resetMotion()}
+function start(){hideAll();score=0;totalPins=0;round=0;correct=0;wrong=0;lastQuestion=-1;timeExpired=false;nextAt=0;pausedAt=0;modalDepth=0;deadline=performance.now()+config.duration*1000;stopRoll();unlockAudio();nextQuestion();if(config.camera&&!cameraActive)startCamera();else if(!config.camera&&cameraActive)stopCamera()}
+function updateAim(){ $('aimLabel').textContent=Math.abs(aim)<.1?'Tengah':(aim<0?'Kiri ':'Kanan ')+Math.round(Math.abs(aim)*100)+'%'}
+function adjust(delta){if(!['READY','QUESTION'].includes(state)||modalDepth)return;aim=clamp(aim+delta,-1,1);updateAim();sound('click')}
+function release(direction=aim,power=.72){if(state!=='READY'||modalDepth||timeExpired)return;setState('ROLLING');let sensitivity={EASY:.85,NORMAL:1.15,CHALLENGE:1.65}[config.difficulty];ball={x:0,z:.05,aim:clamp(direction*sensitivity,-1.5,1.5),power:clamp(power,.35,1),spin:0};status('🎳 BOLA BERGERAK! Lihat balingan anda...');sound('roll');resetMotion()}
+function evaluate(){stopRoll();const fallen=pins.filter(p=>p.down).length;totalPins+=fallen;let right=selected===current.value;if(right)correct++;else wrong++;const gain=fallen*config.pinValue*(right?1:.5);score+=gain;setState('RESULT');$('toast').replaceChildren();let title=document.createElement('strong');title.textContent=(fallen===10?'STRIKE! 🎉':fallen+' PIN! 🎳')+' +'+gain;let p=document.createElement('p');p.textContent=right?'✅ Jawapan betul! Markah penuh.':'إجابة غير صحيحة · Jawapan sebenar: '+current.digit+' ('+current.value+')';p.setAttribute('lang',right?'ms':'ar');let detail=document.createElement('small');detail.textContent=fallen+' × '+config.pinValue+(right?'':' ÷ 2')+' = '+gain+' markah';$('toast').append(title,p,detail);$('toast').hidden=false;$('toast').classList.remove('show');void $('toast').offsetWidth;$('toast').classList.add('show');for(const b of $('answers').children)if(Number(b.dataset.value)===current.value)b.classList.add('correct');sound(right?'correct':'wrong');if(fallen===10){setTimeout(()=>{if(state==='RESULT')sound('strike')},450);if(window.confetti)confetti({particleCount:60,spread:65,origin:{y:.6},colors:['#10b981','#f59e0b','#ffffff']})}status(timeExpired?'⌛ Masa tamat. Menyelesaikan balingan terakhir.':'✨ '+(right?'Bagus!':'Belajar lagi, anda boleh!')+' Soalan seterusnya dalam 3 saat.');nextAt=performance.now()+3000;updateHud()}
+function finish(reason){if(state==='OVER')return;setState('OVER');stopRoll();$('progress').style.width='100%';const answered=correct+wrong,accuracy=answered?Math.round(correct/answered*100):0;const bestKey='patchwork-arabic-best-v1:'+JSON.stringify([config.name,config.className]);const previousBest=Number(readStore(bestKey,0))||0;const best=config.practice?previousBest:Math.max(score,previousBest);if(!config.practice&&answered)writeStore(bestKey,best);let savedOK=true;if(!config.practice&&answered){records.push({name:config.name,className:config.className,score,pins:totalPins,accuracy,correct,wrong,answered,questions:config.questions,pinValue:config.pinValue,difficulty:config.difficulty,duration:config.duration,date:new Date().toISOString()});records.sort((a,b)=>b.score-a.score);records=records.slice(0,10);savedOK=writeStore(KEY,records)}$('endReason').textContent=reason+' · '+config.name;$('resultStats').replaceChildren();for(const [v,l] of [[score,'Jumlah markah'],[totalPins,'Jumlah pin tumbang'],[correct+' / '+wrong,'Betul / Kurang tepat'],[accuracy+'%','Ketepatan ('+answered+' dijawab)']]){let d=document.createElement('div'),s=document.createElement('strong'),t=document.createElement('small');s.textContent=v;t.textContent=l;d.append(s,t);$('resultStats').append(d)}$('personalBest').textContent='Rekod tertinggi peribadi: '+best;$('saveNote').textContent=config.practice?'Sesi latihan: rekod tidak disimpan.':savedOK?(answered?'Rekod disimpan pada pelayar ini.':'Tiada soalan dijawab, rekod tidak disimpan.'):'Rekod tidak dapat disimpan. Storan pelayar tidak tersedia.';$('gameOver').hidden=false;status('🏆 Permainan tamat. Main lagi untuk terus berlatih!');sound('end');if(window.confetti)confetti({particleCount:140,spread:90,origin:{y:.65},colors:['#10b981','#D4AF37','#ffffff']})}
+function showModal(id){if(!modalDepth&&['QUESTION','READY','ROLLING','SETTLING','RESULT'].includes(state)){pausedAt=performance.now();stopRoll()}modalDepth++;$(id).hidden=false}
+function closeModal(id){$(id).hidden=true;modalDepth=Math.max(0,modalDepth-1);if(!modalDepth&&pausedAt){const elapsed=performance.now()-pausedAt;deadline+=elapsed;if(nextAt)nextAt+=elapsed;pausedAt=0;resetMotion();if(state==='ROLLING')sound('roll')}}
+function hideAll(){for(const id of ['welcome','teacher','leaderboard','gameOver'])$(id).hidden=true;modalDepth=0;pausedAt=0}
+function showTeacher(){for(const [k,v]of Object.entries(config)){const input=$('settingsForm').elements[k];if(input)input.type==='checkbox'?input.checked=v:input.value=v}showModal('teacher')}
+function showBoard(){const body=$('boardRows');body.replaceChildren();records.forEach((r,i)=>{const tr=document.createElement('tr');for(const text of [(i+1)+'. '+r.name+(r.className?' · '+r.className:''),r.score,(r.pins||0)+' / '+(r.accuracy||0)+'%',(r.questions||20)+' soalan · '+(r.pinValue||10)+'/pin · '+(r.difficulty||'NORMAL')+' · '+(r.duration? r.duration/60+' min':'∞')+'\n'+new Date(r.date).toLocaleDateString('ms-MY')]){const td=document.createElement('td');td.textContent=text;tr.append(td)}body.append(tr)});if(!records.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent='Belum ada rekod. Jom buat balingan pertama!';tr.append(td);body.append(tr)}$('storageNote').textContent=storageOK?'':'Storan pelayar tidak tersedia. Rekod sesi ini sahaja.';showModal('leaderboard')}
+// Perspective drawing and a lightweight two-dimensional collision simulation in lane coordinates.
+const canvas=$('lane'),ctx=canvas.getContext('2d');function project(x,z){const s=1/(1+z*.56);return {x:380+x*270*s,y:570-z*280*s,s}}
+function polygon(points,fill){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill()}
+function drawLane(){const w=760,h=590;ctx.clearRect(0,0,w,h);let bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#06192b');bg.addColorStop(1,'#0e2638');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);ctx.fillStyle='#10382e';ctx.fillRect(90,36,580,105);ctx.strokeStyle='#D4AF3728';ctx.lineWidth=1;for(let x=100;x<670;x+=48){ctx.beginPath();ctx.moveTo(x,50);ctx.lineTo(x+22,75);ctx.lineTo(x,100);ctx.lineTo(x-22,75);ctx.closePath();ctx.stroke()}ctx.fillStyle='#D4AF37';ctx.font='28px Amiri, serif';ctx.textAlign='center';ctx.fillText('لعبة بولينغ الأعداد',380,91);ctx.font='10px Inter, sans-serif';ctx.fillStyle='#88bcae';ctx.fillText('EMERALD BOWLING CLUB',380,119);
+for(const sign of [-1,1]){polygon([project(sign*1.05,0),project(sign*1.3,0),project(sign*1.3,4.7),project(sign*1.05,4.7)],'#030c1a');ctx.strokeStyle='#10b98166';ctx.lineWidth=2;ctx.beginPath();const a=project(sign*1.3,0),b=project(sign*1.3,4.7);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+let wood=ctx.createLinearGradient(0,120,0,580);wood.addColorStop(0,'#80613e');wood.addColorStop(.55,'#c99b5c');wood.addColorStop(1,'#e2b77b');polygon([project(-1.05,0),project(1.05,0),project(1.05,4.7),project(-1.05,4.7)],wood);ctx.strokeStyle='#68432555';ctx.lineWidth=1;for(let x=-1;x<=1;x+=.12){ctx.beginPath();const a=project(x,0),b=project(x,4.7);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}for(let z=.25;z<4.7;z+=.55){const a=project(-1.05,z),b=project(1.05,z);ctx.strokeStyle='#ffffff10';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}polygon([project(-.1,0),project(.27,0),project(.17,4.6),project(-.15,4.6)],'#fff7d114');for(let x=-.72;x<=.73;x+=.24){let p=project(x,1.15);polygon([{x:p.x-5,y:p.y+8},{x:p.x,y:p.y-4},{x:p.x+5,y:p.y+8}], '#624932')}
+if(state==='READY'||state==='QUESTION'){ctx.setLineDash([8,10]);ctx.strokeStyle='#10b981aa';ctx.lineWidth=3;ctx.beginPath();for(let z=0;z<=3.5;z+=.1){const p=project(aim*1.15*(z/3.5)**1.4,z);if(!z)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y)}ctx.stroke();ctx.setLineDash([])}
+for(const p of [...pins].sort((a,b)=>b.z-a.z))drawPin(p);drawBall(ball||{x:0,z:0,spin:performance.now()/1400});if(state==='IDLE'){ctx.fillStyle='#081126bb';ctx.fillRect(180,305,400,60);ctx.fillStyle='#fff1ca';ctx.font='bold 20px Inter, sans-serif';ctx.fillText('Pilih angka. Sedia. Baling!',380,343)}}
+function drawPin(p){let q=project(p.x,p.z),f=p.fall;ctx.save();ctx.translate(q.x,q.y);ctx.scale(q.s,q.s);ctx.fillStyle='#0004';ctx.beginPath();ctx.ellipse(0,4,20+f*18,6,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1-f*.4;ctx.rotate(p.angle);let g=ctx.createLinearGradient(-12,0,14,0);g.addColorStop(0,'#c7d3dc');g.addColorStop(.5,'#fff');g.addColorStop(1,'#96a8b4');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(-11,0);ctx.bezierCurveTo(-24,-23,-14,-40,-6,-48);ctx.lineTo(-6,-61);ctx.bezierCurveTo(-18,-79,18,-79,6,-61);ctx.lineTo(6,-48);ctx.bezierCurveTo(14,-40,24,-23,11,0);ctx.closePath();ctx.fill();ctx.fillStyle='#ef4444';ctx.fillRect(-7,-58,14,5);ctx.fillRect(-7,-50,14,4);ctx.restore()}
+function drawBall(b){let p=project(b.x,b.z),r=29*p.s;ctx.save();ctx.translate(p.x,p.y-r*.5);ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(0,r*.7,r*1.2,r*.35,0,0,Math.PI*2);ctx.fill();let g=ctx.createRadialGradient(-r*.4,-r*.5,2,0,0,r);g.addColorStop(0,'#bcfce7');g.addColorStop(.3,'#22c997');g.addColorStop(.8,'#057451');g.addColorStop(1,'#033d32');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.rotate(b.spin);for(const [x,y]of [[-.25,-.26],[.14,-.32],[0,.08]]){ctx.fillStyle='#022a24';ctx.beginPath();ctx.ellipse(x*r,y*r,r*.12,r*.16,0,0,Math.PI*2);ctx.fill()}ctx.restore()}
+function topple(p,vx,vz){if(p.down)return;p.down=true;p.vx=vx;p.vz=vz;p.spin=(vx>=0?1:-1)*(1.4+Math.random());p.angle=p.spin*.1;if(performance.now()-lastHit>75){sound('hit');lastHit=performance.now()}}
+function physics(dt){if(!ball)return;if(state==='ROLLING'){ball.z+=dt*(1.8+ball.power*2);ball.x=ball.aim*(ball.z/3.5)**1.4;ball.spin+=dt*10;if(Math.abs(ball.x)>1.09)ball.x=clamp(ball.x,-1.2,1.2);const radius={EASY:.27,NORMAL:.18,CHALLENGE:.14}[config.difficulty];for(const p of pins)if(!p.down&&Math.abs(ball.x)<=1.08&&Math.hypot((p.x-ball.x),p.z-ball.z)<radius){topple(p,(p.x-ball.x)*4+ball.aim*.2,1.1+ball.power)}if(ball.z>4.7){setState('SETTLING');nextAt=performance.now()+1600;stopRoll();status('💥 PIN COLLISION! Mengira pin tumbang...')}}for(const p of pins){if(!p.down)continue;p.x+=p.vx*dt;p.z+=p.vz*dt;p.vx*=Math.exp(-2.4*dt);p.vz*=Math.exp(-2.4*dt);p.fall=clamp(p.fall+dt*2.3,0,1);p.angle=clamp(p.angle+p.spin*dt,-1.55,1.55);for(const other of pins)if(!other.down&&Math.hypot(p.x-other.x,p.z-other.z)<.22&&(Math.abs(p.vx)+Math.abs(p.vz))>.28)topple(other,p.vx*.8+(other.x-p.x)*2,p.vz*.8)} }
+// Motion state machine uses shoulder-relative, time-normalized wrist displacement.
+let cameraActive=false,cameraBusy=false,cameraGeneration=0,camera=null,pose=null,motion={};
+function resetMotion(){motion={side:null,phase:'WAIT',prev:null,lowAt:0,peak:0,started:0};if(cameraActive)$('tracking').textContent='READY · Rendahkan satu tangan di bawah bahu.'}
+function processMotion(lm,t){if(state!=='READY'||modalDepth)return;const candidates=[[15,13,11,'kiri'],[16,14,12,'kanan']];const valid=candidates.filter(([w,e,s])=>[w,e,s].every(i=>lm[i]&&(lm[i].visibility??0)>.65));if(!valid.length){resetMotion();$('tracking').textContent='Tangan tidak jelas. Pastikan bahu, siku dan pergelangan kelihatan.';return}if(!motion.side){const c=valid.find(([w,e,s])=>lm[w].y>lm[s].y+.16);if(!c)return;motion.side=c[3]}const c=valid.find(c=>c[3]===motion.side);if(!c){resetMotion();return}const [wi,ei,si]=c,w=lm[wi],s=lm[si],span=Math.max(.13,Math.abs(lm[11].x-lm[12].x)),relative={x:(w.x-s.x)/span,y:(w.y-s.y)/span,z:((w.z||0)-(s.z||0))/span};let prev=motion.prev;motion.prev={...relative,t};if(!prev||t-prev.t>250||t-prev.t<15){motion.lowAt=0;return}const dt=(t-prev.t)/1000,vy=(prev.y-relative.y)/dt,vz=(prev.z-relative.z)/dt,acc=(vy-(prev.vy||0))/dt;motion.prev.vy=vy;
+if(motion.phase==='WAIT'){if(relative.y>.55){if(!motion.lowAt)motion.lowAt=t;if(t-motion.lowAt>180){motion.phase='READY';$('tracking').textContent='READY ✓ Tangan rendah. Hayun ke paras bahu!'}}else motion.lowAt=0}
+else if(motion.phase==='READY'){if(vy>1.2&&acc>2){motion.phase='SWING';motion.started=t;motion.peak=vy;$('tracking').textContent='SWING ↗ Hayun diteruskan...'}}
+else if(motion.phase==='SWING'){motion.peak=Math.max(motion.peak,vy);if(t-motion.started>1400){resetMotion();return}if(relative.y<.18&&motion.peak>1.5&&(vy>.45||vz>.45)){const direction=clamp(-relative.x*.65,-1,1),power=clamp(motion.peak/7,.4,1);$('tracking').textContent='RELEASE ✓ '+(direction<-.15?'Kiri':direction>.15?'Kanan':'Tengah')+' · Kuasa '+Math.round(power*100)+'%';status('🤖 AI DETECT · Hayunan dikesan!');release(direction,power)}}}
+async function startCamera(){if(cameraActive||cameraBusy)return;if(!window.isSecureContext||!navigator.mediaDevices){$('cameraMessage').textContent='Kamera memerlukan HTTPS atau localhost. Gunakan Baling Maya.';return}if(!window.Pose||!window.Camera){$('cameraMessage').textContent='Pustaka kamera belum tersedia. Semak internet atau gunakan Baling Maya.';return}cameraBusy=true;const generation=++cameraGeneration;$('cameraEmpty').hidden=false;$('cameraMessage').textContent='Memuatkan kamera dan model AI...';$('cameraBtn').disabled=true;try{pose=new Pose({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+f});pose.setOptions({modelComplexity:0,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:.6,minTrackingConfidence:.6});pose.onResults(r=>{if(!cameraActive||generation!==cameraGeneration)return;const c=$('skeleton').getContext('2d');c.clearRect(0,0,640,360);if(!r.poseLandmarks){resetMotion();$('tracking').textContent='Badan belum dikesan. Tunjukkan bahu dan tangan.';return}const lm=r.poseLandmarks;c.lineWidth=3;c.strokeStyle='#39ffcc';c.shadowColor='#10b981';c.shadowBlur=8;for(const [a,b]of [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]])if((lm[a].visibility??0)>.5&&(lm[b].visibility??0)>.5){c.beginPath();c.moveTo(lm[a].x*640,lm[a].y*360);c.lineTo(lm[b].x*640,lm[b].y*360);c.stroke()}for(const i of [11,12,13,14,15,16])if((lm[i].visibility??0)>.5){c.fillStyle=i>14?'#fbbf24':'#fff';c.beginPath();c.arc(lm[i].x*640,lm[i].y*360,5,0,Math.PI*2);c.fill()}processMotion(lm,performance.now())});camera=new Camera($('video'),{onFrame:async()=>{if(cameraActive&&pose)try{await pose.send({image:$('video')})}catch(e){stopCamera();$('cameraMessage').textContent='Model AI gagal dimuatkan. Gunakan Baling Maya.'}},width:640,height:360});cameraActive=true;await camera.start();if(generation!==cameraGeneration){stopCamera();return}$('cameraEmpty').hidden=true;$('cameraBtn').textContent='Hentikan kamera';resetMotion()}catch(e){stopCamera();$('cameraMessage').textContent=e.name==='NotAllowedError'?'Akses kamera ditolak. Baling Maya masih boleh digunakan.':'Kamera tidak tersedia. Tutup aplikasi kamera lain atau gunakan Baling Maya.'}finally{cameraBusy=false;$('cameraBtn').disabled=false}}
+function stopCamera(){cameraGeneration++;cameraActive=false;cameraBusy=false;try{camera?.stop();$('video').srcObject?.getTracks().forEach(t=>t.stop());pose?.close()}catch(e){}camera=null;pose=null;$('video').srcObject=null;$('skeleton').getContext('2d').clearRect(0,0,640,360);$('cameraEmpty').hidden=false;$('cameraMessage').textContent='Kamera dimatikan. Gunakan Baling Maya.';$('cameraBtn').textContent='Aktifkan kamera';resetMotion()}
+function loop(t){const dt=Math.min((t-lastFrame)/1000,.04);lastFrame=t;if(!modalDepth&&['QUESTION','READY','ROLLING','SETTLING','RESULT'].includes(state)){if(config.duration&&t>=deadline&&!timeExpired){timeExpired=true;if(['QUESTION','READY'].includes(state))finish('Masa tamat')}if(['ROLLING','SETTLING'].includes(state))physics(dt);if(state==='SETTLING'&&t>=nextAt)evaluate();if(state==='RESULT'&&t>=nextAt)nextQuestion()}drawLane();updateTimer();requestAnimationFrame(loop)}
+$('startBtn').onclick=start;$('againBtn').onclick=start;$('teacherBtn').onclick=showTeacher;$('welcomeTeacher').onclick=showTeacher;$('closeTeacher').onclick=()=>closeModal('teacher');$('boardBtn').onclick=showBoard;$('endBoard').onclick=showBoard;$('closeBoard').onclick=()=>closeModal('leaderboard');$('clearBoard').onclick=()=>{if(!confirm('Padam semua rekod Top 10 pada pelayar ini?'))return;records=[];writeStore(KEY,records);closeModal('leaderboard');showBoard()};
+$('settingsForm').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);config={name:String(f.get('name')||'Murid').trim()||'Murid',className:String(f.get('className')||'').trim(),questions:Number(f.get('questions')),pinValue:Number(f.get('pinValue')),duration:Number(f.get('duration')),difficulty:f.get('difficulty'),camera:f.has('camera'),practice:f.has('practice')};writeStore(SETTINGS,config);start()};
+$('audioBtn').onclick=async()=>{audioOn=!audioOn;$('audioBtn').textContent=audioOn?'🔊 Audio ON':'🔇 Audio OFF';$('audioBtn').setAttribute('aria-pressed',audioOn);if(window.Tone)Tone.Destination.mute=!audioOn;if(!audioOn)stopRoll();else{await unlockAudio();if(state==='ROLLING'&&!modalDepth)sound('roll')}};
+$('cameraBtn').onclick=()=>cameraActive?stopCamera():startCamera();$('throwBtn').onclick=()=>{unlockAudio();release()};$('leftBtn').onclick=()=>adjust(-.15);$('rightBtn').onclick=()=>adjust(.15);
+let pointerStart=null;canvas.addEventListener('pointerdown',e=>{if(state!=='READY'||modalDepth)return;canvas.setPointerCapture(e.pointerId);pointerStart={x:e.clientX,y:e.clientY,t:performance.now()}});canvas.addEventListener('pointerup',e=>{if(!pointerStart)return;const p=pointerStart;pointerStart=null;if(state!=='READY'||modalDepth)return;const dx=e.clientX-p.x,dy=p.y-e.clientY,rect=canvas.getBoundingClientRect();if(Math.hypot(dx,dy)>25){aim=clamp(dx/rect.width*3,-1,1);updateAim();release(aim,clamp(Math.hypot(dx,dy)/(performance.now()-p.t)*.6,.4,1))}else{aim=clamp((e.clientX-rect.left)/rect.width*2-1,-1,1);updateAim();release(aim,.75)}unlockAudio()});canvas.addEventListener('pointercancel',()=>pointerStart=null);
+document.addEventListener('keydown',e=>{if(modalDepth||['INPUT','SELECT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)||state==='IDLE'||state==='OVER')return;if(e.key==='ArrowLeft'){e.preventDefault();adjust(-.15)}if(e.key==='ArrowRight'){e.preventDefault();adjust(.15)}if(e.code==='Space'){e.preventDefault();unlockAudio();release()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(!modalDepth&&['QUESTION','READY','ROLLING','SETTLING','RESULT'].includes(state)){showModal('teacher');for(const [k,v]of Object.entries(config)){const el=$('settingsForm').elements[k];if(el)el.type==='checkbox'?el.checked=v:el.value=v}}resetMotion();stopRoll()}});window.addEventListener('pagehide',stopCamera);resetPins();updateHud();requestAnimationFrame(loop);
+// Keyboard focus remains within the top visible dialog.
+document.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const top=['leaderboard','teacher','gameOver','welcome'].map($).find(el=>!el.hidden);if(!top)return;const els=[...top.querySelectorAll('button,input,select')].filter(el=>!el.disabled);if(!els.length)return;const first=els[0],last=els.at(-1);if(!top.contains(document.activeElement)){e.preventDefault();first.focus()}else if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}});
 </script></body></html>
