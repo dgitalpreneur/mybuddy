@@ -68,7 +68,7 @@ main{flex:1;min-height:0;padding:0 8px calc(34px + env(safe-area-inset-bottom,0p
 section{display:flex;flex-direction:column;min-height:0;gap:6px}
 #stage{flex:1;min-height:0;padding:4px}
 #lane{width:100%;height:100%;aspect-ratio:auto;object-fit:contain;margin:0}
-#q .w{font-size:clamp(30px,min(8vw,10vh),72px)}#q .h{display:none}
+#q{top:6px;padding:0 20px}#q .w{font-size:clamp(26px,min(5vw,7vh),56px);line-height:1.35}#q .h{display:none}
 #answers{position:static;margin:0;padding:6px;gap:8px;flex:none}
 .ans{font-size:clamp(30px,7vh,52px);padding:2px}
 .ans.hov{transform:scale(1.06);border-color:var(--gold);box-shadow:0 0 0 4px rgba(245,158,11,.5)}
@@ -199,7 +199,7 @@ function drawLane(){
  if(phase==='ready'){const p=P(aim*.45,.2),q=P(aim*.45,.55);cx.strokeStyle='#10b981';cx.lineWidth=4;cx.setLineDash([10,8]);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke();cx.setLineDash([])}
 }
 function drawPin(p){
- const o=P(p.x,p.z),h=70*o.s,w=15*o.s;
+ const o=P(p.x,p.z),h=100*o.s,w=18*o.s;
  cx.save();cx.globalAlpha=p.a;cx.translate(o.x,o.y);
  cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(0,0,w*1.2,w*.4,0,0,7);cx.fill();
  cx.rotate(p.r);
@@ -208,7 +208,7 @@ function drawPin(p){
  cx.fillStyle='#c62828';cx.fillRect(-w*.5,-h*.72,w,h*.05);cx.fillRect(-w*.48,-h*.64,w*.96,h*.04);
  cx.restore();
 }
-function drawBall(){
+function drawBall(ball){
  if(!ball)return;const o=P(ball.x,ball.z),r=34*o.s;
  cx.save();cx.globalAlpha=ball.a;
  cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(o.x+4,o.y+2,r,r*.3,0,0,7);cx.fill();
@@ -217,7 +217,7 @@ function drawBall(){
  cx.fillStyle='#02050f';for(let i=0;i<3;i++){const a=ball.spin+i*.5,hx=o.x+Math.cos(a)*r*.4,hy=cy-r*.1+Math.sin(a)*r*.25;cx.beginPath();cx.arc(hx,hy,r*.1,0,7);cx.fill()}
  cx.fillStyle='rgba(255,255,255,.6)';cx.beginPath();cx.ellipse(o.x-r*.35,cy-r*.45,r*.18,r*.1,-.6,0,7);cx.fill();cx.restore();
 }
-function setPins(){pins=[];for(let r=0;r<4;r++)for(let i=0;i<=r;i++)pins.push({x:(i-r/2)*.1,z:.86+r*.03,r:0,a:1,down:false,vx:0,vz:0,vr:0,t:0})}
+function setPins(){pins=[];for(let r=0;r<4;r++)for(let i=0;i<=r;i++)pins.push({x:(i-r/2)*.12,z:.86+r*.03,r:0,a:1,down:false,vx:0,vz:0,vr:0,t:0})}
 function hitR(){return S.diff==='easy'?.15:S.diff==='challenge'?.075:.1}
 function knock(p,vx,vz){if(p.down)return;p.down=true;p.vx=vx;p.vz=vz;p.vr=(Math.random()-.5)*14;p.t=0;sfx('crash')}
 let lt=0;
@@ -231,9 +231,9 @@ function loop(ts){
  if(ball&&ball.fade){ball.a-=dt*2;ball.z+=dt*.3;if(ball.a<=0){ball=null}}
  pins.forEach(p=>{if(p.down){p.t+=dt;p.x+=p.vx*dt;p.z+=p.vz*dt;p.r+=p.vr*dt;p.vr*=.97;p.vx*=.97;p.vz*=.97;
   if(p.t>1.3)p.a=Math.max(0,p.a-dt*1.5);
-  if(p.t<.8&&(Math.abs(p.vx)+Math.abs(p.vz))>.05)pins.forEach(o=>{if(!o.down&&Math.hypot(o.x-p.x,(o.z-p.z)*3)<.075)knock(o,(o.x-p.x)*3+(Math.random()-.5)*.1,.1+Math.random()*.15)})}});
+  if(p.t<.8&&(Math.abs(p.vx)+Math.abs(p.vz))>.05)pins.forEach(o=>{if(!o.down&&Math.hypot(o.x-p.x,(o.z-p.z)*3)<.09)knock(o,(o.x-p.x)*3+(Math.random()-.5)*.1,.1+Math.random()*.15)})}});
  if(phase==='rolling'&&!ball&&pins.every(p=>!p.down||p.t>1.3))resolve();
- drawLane();[...pins].sort((a,b)=>b.z-a.z).forEach(drawPin);drawBall();
+ drawLane();[...pins].sort((a,b)=>b.z-a.z).forEach(drawPin);drawBall(ball||((phase==='question'||phase==='ready')?{x:aim*.3,z:.05,a:1,spin:0}:null));
  requestAnimationFrame(loop);
 }
 
@@ -262,7 +262,7 @@ function nextQ(){
  status(camOn?'🤏 Gerakkan tangan, CUBIT jari pada jawapan':'🎯 Pilih jawapan anda');showHUD();
 }
 function pick(d,b){
- if(phase!=='question')return;sfx('click');picked=d;b.classList.add('pick');
+ if(phase!=='question')return;sfx('click');picked=d;b.classList.add('pick');$('cursor').style.display='none';document.querySelectorAll('.ans').forEach(a=>a.classList.remove('hov'));
  document.querySelectorAll('.ans').forEach(x=>x.disabled=true);
  phase='ready';pst='low';armAt=performance.now()+2000;lowSince=0;status('Pilihan anda: '+AD[d]+' — '+(camOn?'🏃 SEDIAKAN TANGAN... hayun ke hadapan!':'🏃 SEDIAKAN TANGAN... tekan Baling Maya'));
 }
@@ -312,21 +312,21 @@ $('tOk').onclick=()=>{S={name:$('sName').value.trim(),q:+$('sQ').value,pin:+$('s
  $('mT').classList.remove('on');if(!G||phase==='idle'){$('rd').textContent='0/'+S.q;$('tm').textContent=S.time>0?Math.floor(S.time/60)+':00':'∞'}};
 
 /* ---------- MEDIAPIPE POSE ---------- */
-let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0,armAt=0,lowSince=0,aimLock=0,hands=null,pinched=false,hx=0,hy=0;
+let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0,armAt=0,lowSince=0,aimLock=0,hands=null,pinched=false,hx=0,hy=0,lastB=null;
 function onHands(r){
  const c=$('cursor'),h=r.multiHandLandmarks&&r.multiHandLandmarks[0];
  oc.clearRect(0,0,480,360);
  if(!h||phase!=='question'){c.style.display='none';pinched=false;document.querySelectorAll('.ans').forEach(a=>a.classList.remove('hov'));return}
  oc.fillStyle='#f59e0b';h.forEach(p=>{oc.beginPath();oc.arc(p.x*480,p.y*360,4,0,7);oc.fill()});
  const t=h[4],i=h[8],m=h[9],w0=h[0],sz=Math.hypot(w0.x-m.x,w0.y-m.y)||.1,d=Math.hypot(t.x-i.x,t.y-i.y)/sz;
- const px=(t.x+i.x)/2,py=(t.y+i.y)/2;
- const sx=Math.max(0,Math.min(1,((1-px)-.12)/.76))*innerWidth,sy=Math.max(0,Math.min(1,(py-.1)/.7))*innerHeight;
+ const px=m.x,py=m.y;
+ const sx=Math.max(0,Math.min(1,((1-px)-.2)/.6))*innerWidth,sy=innerHeight/2;
  hx=hx*.5+sx*.5;hy=hy*.5+sy*.5;
- const on=pinched?d<.45:d<.3;
+ const on=pinched?d<.55:d<.38;
  c.style.display='block';c.style.left=hx+'px';c.style.top=hy+'px';c.classList.toggle('pinch',on);
- const el=document.elementFromPoint(hx,hy),b=el&&el.closest?el.closest('.ans'):null;
+ let b=null,bd=1e9;document.querySelectorAll('.ans').forEach(a=>{const q=a.getBoundingClientRect(),dd=Math.abs((q.left+q.right)/2-hx);if(dd<bd){bd=dd;b=a}});if(!on)lastB=b;if(b){const q=b.getBoundingClientRect();c.style.top=((q.top+q.bottom)/2)+'px'}
  document.querySelectorAll('.ans').forEach(a=>a.classList.toggle('hov',a===b));
- if(on&&!pinched&&b&&!b.disabled){c.style.display='none';b.click()}
+ status(on?'🤏 Cubit dikesan!':'✋ Tangan dikesan — cubit untuk pilih '+(b?b.textContent:''));const tb=lastB||b;if(on&&!pinched&&tb&&!tb.disabled){c.style.display='none';tb.click()}
  pinched=on;
 }
 const ov=$('ov'),oc=ov.getContext('2d');
@@ -338,8 +338,8 @@ $('bCam').onclick=async()=>{
   pose=new Pose({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+f});
   pose.setOptions({modelComplexity:0,smoothLandmarks:true,minDetectionConfidence:.5,minTrackingConfidence:.5});
   pose.onResults(onPose);
-  try{hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});hands.onResults(onHands)}catch(e){hands=null}
-  cam=new Camera($('vid'),{onFrame:async()=>{if(phase==='question'&&hands)await hands.send({image:$('vid')});else await pose.send({image:$('vid')})},width:480,height:360});
+  try{hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});hands.onResults(onHands);hands.initialize().catch(()=>{hands=null})}catch(e){hands=null}
+  cam=new Camera($('vid'),{onFrame:async()=>{try{if(phase==='question'&&hands)await hands.send({image:$('vid')});else await pose.send({image:$('vid')})}catch(e){if(hands&&phase==='question'){hands=null;status('Pinch tidak tersedia — sentuh jawapan')}}},width:480,height:360});
   await cam.start();camOn=true;$('camMsg').style.display='none';$('bCam').textContent='📷 Kamera AKTIF';
  }catch(e){const n=(e&&e.name)||'';const why=n==='NotAllowedError'?'Kebenaran kamera ditolak atau disekat oleh halaman (iframe). Buka pautan terus dalam tab baharu pada Chrome, kemudian tekan Benarkan.':n==='NotFoundError'?'Tiada kamera dijumpai pada peranti ini.':n==='NotReadableError'?'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi itu dan cuba lagi.':e&&e.message==='lib'?'Pustaka AI gagal dimuatkan. Semak sambungan internet.':'Ralat: '+(n||e)+'. Pastikan halaman dibuka melalui HTTPS.';$('camMsg').style.display='flex';$('camMsg').innerHTML='Kamera tidak dapat dibuka.<br>'+why+'<br><br>Anda masih boleh bermain dengan butang Baling Maya atau sentuh lorong.'}
 };
