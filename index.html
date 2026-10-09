@@ -302,7 +302,7 @@ $('bCam').onclick=async()=>{
   pose.onResults(onPose);
   cam=new Camera($('vid'),{onFrame:async()=>{await pose.send({image:$('vid')})},width:480,height:360});
   await cam.start();camOn=true;$('camMsg').style.display='none';$('bCam').textContent='📷 Kamera AKTIF';
- }catch(e){$('camMsg').style.display='flex';$('camMsg').innerHTML='Kamera tidak dapat dibuka.<br>Gunakan butang Baling Maya atau sentuh lorong.'}
+ }catch(e){const n=(e&&e.name)||'';const why=n==='NotAllowedError'?'Kebenaran kamera ditolak atau disekat oleh halaman (iframe). Buka pautan terus dalam tab baharu pada Chrome, kemudian tekan Benarkan.':n==='NotFoundError'?'Tiada kamera dijumpai pada peranti ini.':n==='NotReadableError'?'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi itu dan cuba lagi.':e&&e.message==='lib'?'Pustaka AI gagal dimuatkan. Semak sambungan internet.':'Ralat: '+(n||e)+'. Pastikan halaman dibuka melalui HTTPS.';$('camMsg').style.display='flex';$('camMsg').innerHTML='Kamera tidak dapat dibuka.<br>'+why+'<br><br>Anda masih boleh bermain dengan butang Baling Maya atau sentuh lorong.'}
 };
 function onPose(r){
  oc.clearRect(0,0,480,360);const L=r.poseLandmarks;if(!L)return;
