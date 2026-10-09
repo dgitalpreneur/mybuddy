@@ -5,6 +5,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@500;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
@@ -58,6 +59,26 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px;borde
 .grid2 div{background:var(--glass);border-radius:12px;padding:8px;font-size:13px}.grid2 b{display:block;font-size:20px;color:var(--em2)}
 #wm{position:fixed;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:right;font:700 12px/1.2 Inter;color:var(--gold2);opacity:.9;pointer-events:none;z-index:30;text-shadow:0 1px 4px #000}
 #wm span{display:block;font-weight:400;color:#cbd5e1;font-size:10px}
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;height:100dvh}
+header{margin:6px 8px!important;padding:6px 10px;flex:none}
+h1{font-size:clamp(14px,2.4vw,22px)}h1 small{display:none}
+.chip{padding:3px 9px;font-size:12px}.btn{padding:6px 10px;font-size:13px}
+main{flex:1;min-height:0;padding:0 8px calc(34px + env(safe-area-inset-bottom,0px));grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;gap:6px}
+section{display:flex;flex-direction:column;min-height:0;gap:6px}
+#stage{flex:1;min-height:0;padding:4px}
+#lane{width:100%;height:100%;aspect-ratio:auto;object-fit:contain;margin:0}
+#q .w{font-size:clamp(30px,min(8vw,10vh),72px)}#q .h{display:none}
+#answers{position:static;margin:0;padding:6px;gap:8px;flex:none}
+.ans{font-size:clamp(30px,7vh,52px);padding:2px}
+.ans.hov{transform:scale(1.06);border-color:var(--gold);box-shadow:0 0 0 4px rgba(245,158,11,.5)}
+aside{flex-direction:row;gap:6px;max-height:30vh;overflow:hidden}
+aside>.glass{flex:1;min-width:0}
+#camBox{height:13vh;width:auto;max-width:100%;margin:4px auto}
+#status{padding:6px;font-size:13px}.row{padding:0 4px 6px;gap:4px}
+#cursor{position:fixed;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:4px solid var(--gold);background:rgba(245,158,11,.25);pointer-events:none;z-index:50;display:none}
+#cursor.pinch{background:var(--em2);transform:scale(.7)}
+@media(min-width:800px){main{grid-template-columns:1fr 250px;grid-template-rows:minmax(0,1fr)}aside{flex-direction:column;max-height:none;overflow:auto}#camBox{height:auto;margin:6px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head>
 <body>
@@ -117,6 +138,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px;borde
  <div class="grid2" id="gStats"></div>
  <div class="row"><button class="btn gold" id="gAgain">Main Semula</button><button class="btn" id="gLb">Papan Pendahulu</button></div></div></div>
 
+<div id="cursor"></div>
 <div id="wm">Patchwork Click<span>Educational Game</span></div>
 
 <script>
@@ -237,7 +259,7 @@ function nextQ(){
  cur={k,o};picked=null;G.i++;setPins();ball=null;setAim(0);phase='question';
  $('qw').textContent=AW[k];$('answers').innerHTML='';
  o.forEach(d=>{const b=document.createElement('button');b.className='ans';b.textContent=AD[d];b.setAttribute('aria-label','Jawapan '+(d+1));b.onclick=()=>pick(d,b);$('answers').appendChild(b)});
- status('🎯 Pilih jawapan anda');showHUD();
+ status(camOn?'🤏 Gerakkan tangan, CUBIT jari pada jawapan':'🎯 Pilih jawapan anda');showHUD();
 }
 function pick(d,b){
  if(phase!=='question')return;sfx('click');picked=d;b.classList.add('pick');
@@ -281,7 +303,7 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 $('bStart').onclick=startGame;$('gAgain').onclick=startGame;
 $('bL').onclick=()=>{sfx('click');setAim(aim-.25)};$('bR').onclick=()=>{sfx('click');setAim(aim+.25)};
 $('bThrow').onclick=()=>doThrow(aim,1);
-cv.addEventListener('pointerdown',e=>{if(phase!=='ready')return;const r=cv.getBoundingClientRect();setAim(((e.clientX-r.left)/r.width-.5)*2.2);doThrow(aim,1)});
+cv.addEventListener('pointerdown',e=>{if(phase!=='ready')return;const r=cv.getBoundingClientRect(),sc=Math.min(r.width/W,r.height/H),ox=(r.width-W*sc)/2;setAim((((e.clientX-r.left-ox)/(W*sc))-.5)*2.2);doThrow(aim,1)});
 $('bLb').onclick=showLB;$('gLb').onclick=()=>{$('mG').classList.remove('on');showLB()};$('lbOk').onclick=()=>$('mL').classList.remove('on');
 $('lbDel').onclick=()=>{if(confirm('Padam semua rekod?')){localStorage.removeItem('abb_lb');showLB()}};
 $('bT').onclick=()=>{$('sName').value=S.name;$('sQ').value=S.q;$('sP').value=S.pin;$('sT').value=S.time;$('sD').value=S.diff;$('sTr').checked=S.train;$('mT').classList.add('on')};
@@ -290,7 +312,23 @@ $('tOk').onclick=()=>{S={name:$('sName').value.trim(),q:+$('sQ').value,pin:+$('s
  $('mT').classList.remove('on');if(!G||phase==='idle'){$('rd').textContent='0/'+S.q;$('tm').textContent=S.time>0?Math.floor(S.time/60)+':00':'∞'}};
 
 /* ---------- MEDIAPIPE POSE ---------- */
-let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0,armAt=0,lowSince=0,aimLock=0;
+let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0,armAt=0,lowSince=0,aimLock=0,hands=null,pinched=false,hx=0,hy=0;
+function onHands(r){
+ const c=$('cursor'),h=r.multiHandLandmarks&&r.multiHandLandmarks[0];
+ oc.clearRect(0,0,480,360);
+ if(!h||phase!=='question'){c.style.display='none';pinched=false;document.querySelectorAll('.ans').forEach(a=>a.classList.remove('hov'));return}
+ oc.fillStyle='#f59e0b';h.forEach(p=>{oc.beginPath();oc.arc(p.x*480,p.y*360,4,0,7);oc.fill()});
+ const t=h[4],i=h[8],m=h[9],w0=h[0],sz=Math.hypot(w0.x-m.x,w0.y-m.y)||.1,d=Math.hypot(t.x-i.x,t.y-i.y)/sz;
+ const px=(t.x+i.x)/2,py=(t.y+i.y)/2;
+ const sx=Math.max(0,Math.min(1,((1-px)-.12)/.76))*innerWidth,sy=Math.max(0,Math.min(1,(py-.1)/.7))*innerHeight;
+ hx=hx*.5+sx*.5;hy=hy*.5+sy*.5;
+ const on=pinched?d<.45:d<.3;
+ c.style.display='block';c.style.left=hx+'px';c.style.top=hy+'px';c.classList.toggle('pinch',on);
+ const el=document.elementFromPoint(hx,hy),b=el&&el.closest?el.closest('.ans'):null;
+ document.querySelectorAll('.ans').forEach(a=>a.classList.toggle('hov',a===b));
+ if(on&&!pinched&&b&&!b.disabled){c.style.display='none';b.click()}
+ pinched=on;
+}
 const ov=$('ov'),oc=ov.getContext('2d');
 $('bCam').onclick=async()=>{
  initAudio();if(camOn)return;
@@ -300,7 +338,8 @@ $('bCam').onclick=async()=>{
   pose=new Pose({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+f});
   pose.setOptions({modelComplexity:0,smoothLandmarks:true,minDetectionConfidence:.5,minTrackingConfidence:.5});
   pose.onResults(onPose);
-  cam=new Camera($('vid'),{onFrame:async()=>{await pose.send({image:$('vid')})},width:480,height:360});
+  try{hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});hands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});hands.onResults(onHands)}catch(e){hands=null}
+  cam=new Camera($('vid'),{onFrame:async()=>{if(phase==='question'&&hands)await hands.send({image:$('vid')});else await pose.send({image:$('vid')})},width:480,height:360});
   await cam.start();camOn=true;$('camMsg').style.display='none';$('bCam').textContent='📷 Kamera AKTIF';
  }catch(e){const n=(e&&e.name)||'';const why=n==='NotAllowedError'?'Kebenaran kamera ditolak atau disekat oleh halaman (iframe). Buka pautan terus dalam tab baharu pada Chrome, kemudian tekan Benarkan.':n==='NotFoundError'?'Tiada kamera dijumpai pada peranti ini.':n==='NotReadableError'?'Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi itu dan cuba lagi.':e&&e.message==='lib'?'Pustaka AI gagal dimuatkan. Semak sambungan internet.':'Ralat: '+(n||e)+'. Pastikan halaman dibuka melalui HTTPS.';$('camMsg').style.display='flex';$('camMsg').innerHTML='Kamera tidak dapat dibuka.<br>'+why+'<br><br>Anda masih boleh bermain dengan butang Baling Maya atau sentuh lorong.'}
 };
