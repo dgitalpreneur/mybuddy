@@ -101,7 +101,7 @@ function processMotion(lm,t){
  if(rise>=riseNeeded&&motion.peak>=speedNeeded&&vy>-.15){const direction=clamp(-relative.x*.32,-.75,.75),power=clamp(.55+motion.peak*.08,.55,1);release(direction,power);$('swingFill').style.width='100%';$('tracking').textContent='✓ HAYUNAN DIKESAN! Bola dilepaskan.';status('🎳 Hayunan dikesan! Bola sedang bergerak.')}}
 }
 
-// MediaPipe Hands: mirrored index fingertip cursor, palm-normalized pinch and dwell.
+// MediaPipe Hands: mirrored index fingertip cursor, palm-normalized pinch and dwell.ccccc
 let fingerMode='pinch',finger={};
 function resetFinger(){finger={target:null,locked:null,entered:0,pinchAt:null,pinchFrames:0,armed:false,pinched:false,x:null,y:null,last:0};$('fingerCursor').hidden=true;for(const b of $('answers').children){b.classList.remove('gesture-hover');b.style.setProperty('--hold','0%')}}
 function handDistance(a,b){return Math.hypot((a.x-b.x)*640,(a.y-b.y)*360)}
