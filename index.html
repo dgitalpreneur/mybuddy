@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ms"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arabic Number Bowling AI — لعبة بولينغ الأعداد</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@500;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+:root{--navy:#081126;--em:#064e3b;--em2:#10b981;--gold:#f59e0b;--gold2:#D4AF37;--glass:rgba(255,255,255,.07);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--navy);color:#f1f5f9;font-family:Inter,Tajawal,system-ui,sans-serif}
+body{background:radial-gradient(circle at 20% 0,#0b3b34 0,transparent 45%),var(--navy);min-height:100vh}
+body:before{content:"";position:fixed;inset:0;opacity:.07;pointer-events:none;background:repeating-conic-gradient(from 22.5deg at 50% 50%,#D4AF37 0 2deg,transparent 2deg 45deg);background-size:90px 90px}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.glass{background:var(--glass);border:1px solid rgba(212,175,55,.3);border-radius:16px;backdrop-filter:blur(8px)}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 14px;position:relative}
+h1{margin:0;font-family:Amiri,serif;font-size:clamp(18px,3vw,28px);color:var(--gold2)}
+h1 small{display:block;font:600 11px Inter;color:#94a3b8}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:6px 12px;border-radius:999px;background:var(--glass);border:1px solid rgba(212,175,55,.3);font-weight:800;font-size:14px}
+.chip b{color:var(--gold)}
+.btn{padding:8px 14px;border-radius:12px;background:var(--em);border:1px solid var(--em2);font-weight:600;font-size:14px}
+.btn:hover{background:#0a6b52}.btn.gold{background:var(--gold);color:#201400;border-color:var(--gold2)}
+.btn:focus-visible,.ans:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+main{display:grid;gap:12px;padding:0 14px 70px;grid-template-columns:1fr}
+@media(min-width:960px){main{grid-template-columns:1fr 340px}}
+#stage{position:relative;padding:8px}
+#lane{width:100%;aspect-ratio:16/10;display:block;border-radius:12px;touch-action:manipulation}
+#q{position:absolute;left:50%;top:14px;transform:translateX(-50%);text-align:center;background:rgba(8,17,38,.75);border:1px solid var(--gold2);border-radius:16px;padding:4px 26px;pointer-events:none}
+#q .w{font:700 clamp(40px,8vw,84px)/1.5 Amiri,serif;color:var(--gold);direction:rtl}
+#q .h{font-size:12px;color:#cbd5e1;margin-top:-6px;padding-bottom:4px}
+#toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;text-align:center;padding:14px 26px;border-radius:18px;background:rgba(6,78,59,.92);border:2px solid var(--gold);transition:.35s;pointer-events:none;font-weight:800;min-width:220px}
+#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#toast.bad{background:rgba(120,30,30,.92)}
+#toast .ar{font:700 30px Amiri,serif}
+#answers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.ans{padding:6px;border-radius:16px;background:linear-gradient(160deg,var(--em),#043d2e);border:2px solid var(--gold2);font:700 clamp(40px,7vw,64px)/1.3 Amiri,serif;color:#fff}
+.ans:hover:not(:disabled){transform:translateY(-3px);border-color:var(--gold)}
+.ans:disabled{opacity:.45;cursor:default}.ans.pick{outline:4px solid var(--gold);opacity:1}
+aside{display:flex;flex-direction:column;gap:10px}
+#camBox{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:12px;background:#000;margin:8px}
+#camBox video,#camBox canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);object-fit:cover}
+#camMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;padding:10px;color:#94a3b8}
+#status{padding:12px;text-align:center;font-weight:800;font-size:16px;color:var(--gold)}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:0 8px 10px}
+.modal{position:fixed;inset:0;background:rgba(3,8,20,.8);display:none;align-items:center;justify-content:center;padding:14px;z-index:20}
+.modal.on{display:flex}
+.card{max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:20px;background:#0b1a33;border:1px solid var(--gold2);border-radius:20px}
+.card h2{margin:0 0 12px;font-family:Amiri,serif;color:var(--gold2);font-size:26px}
+label{display:block;margin:10px 0 4px;font-size:13px;color:#cbd5e1}
+input[type=text],select{width:100%;padding:9px;border-radius:10px;border:1px solid #334155;background:#0f2442;color:#fff;font:inherit}
+.tg{display:flex;align-items:center;gap:8px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px;border-bottom:1px solid #1e3a5f;text-align:left}
+.big{font:800 44px Inter;color:var(--gold)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.grid2 div{background:var(--glass);border-radius:12px;padding:8px;font-size:13px}.grid2 b{display:block;font-size:20px;color:var(--em2)}
+#wm{position:fixed;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:right;font:700 12px/1.2 Inter;color:var(--gold2);opacity:.9;pointer-events:none;z-index:30;text-shadow:0 1px 4px #000}
+#wm span{display:block;font-weight:400;color:#cbd5e1;font-size:10px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body>
+<header class="glass" style="margin:10px 14px">
+ <h1>ARABIC NUMBER BOWLING AI — لعبة بولينغ الأعداد<small>Baling bola, jatuhkan pin, kuasai nombor Arab ١–١٠</small></h1>
+ <div class="stats">
+  <span class="chip">Markah <b id="sc">0</b></span>
+  <span class="chip">Soalan <b id="rd">0/20</b></span>
+  <span class="chip">Masa <b id="tm">∞</b></span>
+ </div>
+ <div class="stats">
+  <button class="btn" id="bAud">🔊 Audio ON</button>
+  <button class="btn" id="bLb">🏆 Papan</button>
+  <button class="btn gold" id="bT">⚙ Mod Guru</button>
+ </div>
+</header>
+<main>
+ <section>
+  <div id="stage" class="glass">
+   <canvas id="lane" width="960" height="600"></canvas>
+   <div id="q"><div class="w" id="qw">—</div><div class="h">Pilih angka yang betul, kemudian baling!</div></div>
+   <div id="toast"></div>
+  </div>
+  <div id="answers"></div>
+ </section>
+ <aside>
+  <div class="glass">
+   <div id="camBox"><video id="vid" playsinline muted></video><canvas id="ov" width="480" height="360"></canvas><div id="camMsg">Kamera AI belum aktif.<br>Anda masih boleh bermain dengan butang / sentuh skrin.</div></div>
+   <div class="row"><button class="btn" id="bCam">📷 Aktifkan Kamera</button></div>
+  </div>
+  <div class="glass"><div id="status">Tekan "Mula Main"</div>
+   <div class="row">
+    <button class="btn" id="bL" aria-label="Arah kiri">⬅ Kiri</button>
+    <button class="btn gold" id="bThrow">🎳 Baling Maya</button>
+    <button class="btn" id="bR" aria-label="Arah kanan">Kanan ➡</button>
+   </div>
+   <div class="row" style="font-size:13px;color:#cbd5e1">Arah: <b id="aimv" style="color:var(--gold)">Tengah</b></div>
+   <div class="row"><button class="btn gold" id="bStart">▶ Mula Main</button></div>
+  </div>
+ </aside>
+</main>
+
+<div class="modal" id="mT"><div class="card"><h2>Mod Guru</h2>
+ <label>Nama Murid / Kelas</label><input type="text" id="sName" placeholder="cth: Aisyah 3 Cemerlang">
+ <label>Jumlah Soalan</label><select id="sQ"><option>10</option><option selected>20</option><option>30</option></select>
+ <label>Markah Setiap Pin</label><select id="sP"><option>5</option><option selected>10</option><option>20</option></select>
+ <label>Pemasa</label><select id="sT"><option value="120">2 minit</option><option value="180">3 minit</option><option value="300">5 minit</option><option value="0" selected>Tanpa had masa</option></select>
+ <label>Tahap Hayunan</label><select id="sD"><option value="easy">EASY — zon pin lebih lebar</option><option value="normal" selected>NORMAL — ikut arah tangan</option><option value="challenge">CHALLENGE — sangat sensitif</option></select>
+ <div class="tg"><input type="checkbox" id="sTr"><label style="margin:0" for="sTr">Mod Latihan (rekod tidak disimpan)</label></div>
+ <div class="row" style="margin-top:16px"><button class="btn gold" id="tOk">Simpan &amp; Tutup</button></div></div></div>
+
+<div class="modal" id="mL"><div class="card"><h2>Papan Pendahulu — Top 10</h2><div id="lbBody"></div>
+ <div class="row" style="margin-top:14px"><button class="btn" id="lbDel">🗑 Padam Rekod</button><button class="btn gold" id="lbOk">Tutup</button></div></div></div>
+
+<div class="modal" id="mG"><div class="card" style="text-align:center"><h2>Permainan Tamat! 🎉</h2>
+ <div class="big" id="gScore">0</div><div id="gBest" style="color:#cbd5e1"></div>
+ <div class="grid2" id="gStats"></div>
+ <div class="row"><button class="btn gold" id="gAgain">Main Semula</button><button class="btn" id="gLb">Papan Pendahulu</button></div></div></div>
+
+<div id="wm">Patchwork Click<span>Educational Game</span></div>
+
+<script>
+const AW=['وَاحِدٌ','اِثْنَانِ','ثَلَاثَةٌ','أَرْبَعَةٌ','خَمْسَةٌ','سِتَّةٌ','سَبْعَةٌ','ثَمَانِيَةٌ','تِسْعَةٌ','عَشَرَةٌ'];
+const AD=['١','٢','٣','٤','٥','٦','٧','٨','٩','١٠'];
+const $=id=>document.getElementById(id);
+let S={name:'',q:20,pin:10,time:0,diff:'normal',train:false};
+try{Object.assign(S,JSON.parse(localStorage.getItem('abb_set')||'{}'))}catch(e){}
+let G=null,phase='idle',cur=null,picked=null,aim=0,ball=null,pins=[],last=-1,timerId=null,nextT=null,audioOn=true;
+
+/* ---------- AUDIO ---------- */
+let A=null;
+function initAudio(){
+ if(A||!window.Tone)return;
+ try{Tone.start();
+ A={poly:new Tone.PolySynth(Tone.Synth,{volume:-10}).toDestination(),
+ pink:new Tone.NoiseSynth({noise:{type:'pink'},envelope:{attack:.05,decay:.9,sustain:.2,release:.3},volume:-22}).toDestination(),
+ crash:new Tone.NoiseSynth({noise:{type:'white'},envelope:{attack:.001,decay:.25,sustain:0},volume:-12}).toDestination(),
+ buzz:new Tone.Synth({oscillator:{type:'sawtooth'},volume:-14}).toDestination()};}catch(e){A=null}
+}
+function sfx(n){
+ if(!audioOn||!A)return;const t=Tone.now();
+ try{
+ if(n==='click')A.poly.triggerAttackRelease('C5','16n',t);
+ else if(n==='roll')A.pink.triggerAttackRelease(1.1,t);
+ else if(n==='crash'){A.crash.triggerAttackRelease('8n',t);A.poly.triggerAttackRelease(['A6','E7'],'32n',t+.02)}
+ else if(n==='strike')['C4','E4','G4','C5','E5','G5'].forEach((x,i)=>A.poly.triggerAttackRelease(x,'8n',t+i*.1));
+ else if(n==='ok')['E5','G5','C6'].forEach((x,i)=>A.poly.triggerAttackRelease(x,'16n',t+i*.1));
+ else if(n==='bad'){A.buzz.triggerAttackRelease('Eb4','8n',t);A.buzz.triggerAttackRelease('C4','4n',t+.18)}
+ else if(n==='fan')[['C5',0],['E5',.15],['G5',.3],['C6',.5]].forEach(([x,d])=>A.poly.triggerAttackRelease([x,'G4'],'8n',t+d));
+ }catch(e){}
+}
+$('bAud').onclick=()=>{initAudio();audioOn=!audioOn;$('bAud').textContent=audioOn?'🔊 Audio ON':'🔇 Audio OFF';sfx('click')};
+
+/* ---------- LANE CANVAS ---------- */
+const cv=$('lane'),cx=cv.getContext('2d'),W=960,H=600;
+const Y0=H*.94,Y1=H*.34;
+function P(x,z){const s=1-.52*z,hw=W*.33*s;return{x:W/2+x*hw,y:Y0-(Y0-Y1)*z,s}}
+function poly(pts,fill){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();cx.fillStyle=fill;cx.fill()}
+function drawLane(){
+ cx.clearRect(0,0,W,H);
+ let g=cx.createLinearGradient(0,0,0,Y1);g.addColorStop(0,'#04101f');g.addColorStop(1,'#0a3a30');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+ cx.fillStyle='#052e24';cx.fillRect(0,Y1-40,W,60);
+ cx.strokeStyle='#D4AF37';cx.globalAlpha=.5;cx.lineWidth=2;
+ for(let i=0;i<9;i++){const x=60+i*105;cx.beginPath();cx.arc(x,Y1-10,34,0,7);cx.stroke();cx.beginPath();cx.moveTo(x-34,Y1-10);cx.lineTo(x+34,Y1-10);cx.moveTo(x,Y1-44);cx.lineTo(x,Y1+24);cx.stroke()}
+ cx.globalAlpha=1;cx.fillStyle='#D4AF37';cx.font='700 34px Amiri';cx.textAlign='center';cx.fillText('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',W/2,Y1-52);
+ poly([P(-1.2,0),P(1.2,0),P(1.2,1),P(-1.2,1)],'#111827');
+ g=cx.createLinearGradient(0,Y1,0,Y0);g.addColorStop(0,'#b9803f');g.addColorStop(1,'#e0a65a');
+ poly([P(-1,0),P(1,0),P(1,1),P(-1,1)],g);
+ cx.lineWidth=1;cx.strokeStyle='rgba(90,50,10,.45)';
+ for(let i=-6;i<=6;i++){const a=P(i/6,0),b=P(i/6,1);cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke()}
+ cx.fillStyle='rgba(60,35,10,.8)';
+ [-.6,-.4,-.2,0,.2,.4,.6].forEach((x,i)=>{const z=.38+Math.abs(x)*.12,p=P(x,z),q=P(x,z+.05);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-6*p.s,q.y+8);cx.lineTo(p.x+6*p.s,q.y+8);cx.fill()});
+ g=cx.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,'rgba(255,255,255,.2)');g.addColorStop(1,'rgba(255,255,255,0)');
+ poly([P(-1,0),P(1,0),P(1,1),P(-1,1)],g);
+ cx.strokeStyle='#D4AF37';cx.lineWidth=3;cx.beginPath();[[-1,-1],[1,1]].forEach(([x])=>{const a=P(x,0),b=P(x,1);cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y)});cx.stroke();
+ cx.lineWidth=1;cx.beginPath();const l0=P(-1,.1),l1=P(1,.1);cx.moveTo(l0.x,l0.y);cx.lineTo(l1.x,l1.y);cx.stroke();
+ if(phase==='ready'){const p=P(aim*.45,.2),q=P(aim*.45,.55);cx.strokeStyle='#10b981';cx.lineWidth=4;cx.setLineDash([10,8]);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke();cx.setLineDash([])}
+}
+function drawPin(p){
+ const o=P(p.x,p.z),h=70*o.s,w=15*o.s;
+ cx.save();cx.globalAlpha=p.a;cx.translate(o.x,o.y);
+ cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(0,0,w*1.2,w*.4,0,0,7);cx.fill();
+ cx.rotate(p.r);
+ let g=cx.createLinearGradient(-w,0,w,0);g.addColorStop(0,'#cfd6e0');g.addColorStop(.4,'#fff');g.addColorStop(1,'#aab3c2');cx.fillStyle=g;
+ cx.beginPath();cx.moveTo(-w*.45,0);cx.bezierCurveTo(-w*1.3,-h*.3,-w*.3,-h*.55,-w*.35,-h*.75);cx.arc(0,-h*.88,w*.42,Math.PI,0);cx.bezierCurveTo(w*.3,-h*.55,w*1.3,-h*.3,w*.45,0);cx.fill();
+ cx.fillStyle='#c62828';cx.fillRect(-w*.5,-h*.72,w,h*.05);cx.fillRect(-w*.48,-h*.64,w*.96,h*.04);
+ cx.restore();
+}
+function drawBall(){
+ if(!ball)return;const o=P(ball.x,ball.z),r=34*o.s;
+ cx.save();cx.globalAlpha=ball.a;
+ cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(o.x+4,o.y+2,r,r*.3,0,0,7);cx.fill();
+ const cy=o.y-r;let g=cx.createRadialGradient(o.x-r*.35,cy-r*.4,r*.1,o.x,cy,r);g.addColorStop(0,'#6ea8ff');g.addColorStop(.35,'#1d3a8a');g.addColorStop(1,'#050b22');
+ cx.fillStyle=g;cx.beginPath();cx.arc(o.x,cy,r,0,7);cx.fill();
+ cx.fillStyle='#02050f';for(let i=0;i<3;i++){const a=ball.spin+i*.5,hx=o.x+Math.cos(a)*r*.4,hy=cy-r*.1+Math.sin(a)*r*.25;cx.beginPath();cx.arc(hx,hy,r*.1,0,7);cx.fill()}
+ cx.fillStyle='rgba(255,255,255,.6)';cx.beginPath();cx.ellipse(o.x-r*.35,cy-r*.45,r*.18,r*.1,-.6,0,7);cx.fill();cx.restore();
+}
+function setPins(){pins=[];for(let r=0;r<4;r++)for(let i=0;i<=r;i++)pins.push({x:(i-r/2)*.1,z:.86+r*.03,r:0,a:1,down:false,vx:0,vz:0,vr:0,t:0})}
+function hitR(){return S.diff==='easy'?.15:S.diff==='challenge'?.075:.1}
+function knock(p,vx,vz){if(p.down)return;p.down=true;p.vx=vx;p.vz=vz;p.vr=(Math.random()-.5)*14;p.t=0;sfx('crash')}
+let lt=0;
+function loop(ts){
+ const dt=Math.min(.05,(ts-lt)/1000||0);lt=ts;
+ if(ball&&ball.on){
+  ball.z+=ball.v*dt;ball.x=ball.ax*Math.pow((ball.z-.05)/.9,1.2);ball.spin+=dt*14;
+  pins.forEach(p=>{if(!p.down&&Math.abs(ball.z-p.z)<.025&&Math.abs(ball.x-p.x)<hitR())knock(p,(p.x-ball.x)*2.5+(Math.random()-.5)*.1,.15+Math.random()*.2)});
+  if(ball.z>=1){ball.on=false;ball.fade=true}
+ }
+ if(ball&&ball.fade){ball.a-=dt*2;ball.z+=dt*.3;if(ball.a<=0){ball=null}}
+ pins.forEach(p=>{if(p.down){p.t+=dt;p.x+=p.vx*dt;p.z+=p.vz*dt;p.r+=p.vr*dt;p.vr*=.97;p.vx*=.97;p.vz*=.97;
+  if(p.t>1.3)p.a=Math.max(0,p.a-dt*1.5);
+  if(p.t<.8&&(Math.abs(p.vx)+Math.abs(p.vz))>.05)pins.forEach(o=>{if(!o.down&&Math.hypot(o.x-p.x,(o.z-p.z)*3)<.075)knock(o,(o.x-p.x)*3+(Math.random()-.5)*.1,.1+Math.random()*.15)})}});
+ if(phase==='rolling'&&!ball&&pins.every(p=>!p.down||p.t>1.3))resolve();
+ drawLane();[...pins].sort((a,b)=>b.z-a.z).forEach(drawPin);drawBall();
+ requestAnimationFrame(loop);
+}
+
+/* ---------- GAME FLOW ---------- */
+function status(t){$('status').textContent=t}
+function aimTxt(){return Math.abs(aim)<.15?'Tengah':aim<0?'Kiri':'Kanan'}
+function setAim(v){aim=Math.max(-1,Math.min(1,v));$('aimv').textContent=aimTxt()}
+function mult(){return S.diff==='easy'?.7:S.diff==='challenge'?1.6:1}
+function startGame(){
+ initAudio();sfx('click');clearTimeout(nextT);clearInterval(timerId);
+ G={score:0,i:0,ok:0,bad:0,pins:0,left:S.time};
+ $('mG').classList.remove('on');
+ if(S.time>0)timerId=setInterval(()=>{G.left--;showT();if(G.left<=0){clearInterval(timerId);if(phase!=='rolling')endGame();else G.over=true}},1000);
+ showHUD();nextQ();
+}
+function showT(){$('tm').textContent=S.time>0?Math.floor(G.left/60)+':'+String(G.left%60).padStart(2,'0'):'∞'}
+function showHUD(){$('sc').textContent=G?G.score:0;$('rd').textContent=(G?G.i:0)+'/'+S.q;showT()}
+function nextQ(){
+ if(G.i>=S.q||G.over||(S.time>0&&G.left<=0)){endGame();return}
+ let k;do{k=Math.floor(Math.random()*10)}while(k===last);last=k;
+ const o=[k];while(o.length<3){const d=Math.floor(Math.random()*10);if(!o.includes(d))o.push(d)}
+ o.sort(()=>Math.random()-.5);
+ cur={k,o};picked=null;G.i++;setPins();ball=null;setAim(0);phase='question';
+ $('qw').textContent=AW[k];$('answers').innerHTML='';
+ o.forEach(d=>{const b=document.createElement('button');b.className='ans';b.textContent=AD[d];b.setAttribute('aria-label','Jawapan '+(d+1));b.onclick=()=>pick(d,b);$('answers').appendChild(b)});
+ status('🎯 Pilih jawapan anda');showHUD();
+}
+function pick(d,b){
+ if(phase!=='question')return;sfx('click');picked=d;b.classList.add('pick');
+ document.querySelectorAll('.ans').forEach(x=>x.disabled=true);
+ phase='ready';pst='low';status(camOn?'🏃 SEDIAKAN TANGAN... hayun ke hadapan!':'🏃 SEDIAKAN TANGAN... tekan Baling Maya');
+}
+function doThrow(a,speed){
+ if(phase!=='ready')return;phase='rolling';pst='cool';
+ ball={x:0,z:.05,v:.7+Math.min(.7,speed*.25),ax:Math.max(-1,Math.min(1,a))*.45*mult(),a:1,spin:0,on:true};
+ status('🎳 Bola bergolek...');sfx('roll');
+}
+function resolve(){
+ phase='result';const n=pins.filter(p=>p.down).length,ok=picked===cur.k;
+ let pts=n*S.pin;if(!ok)pts=Math.round(pts/2);
+ G.score+=pts;G.pins+=n;ok?G.ok++:G.bad++;
+ const t=$('toast');t.className='on'+(ok?'':' bad');
+ t.innerHTML=(n===10?'🎳 STRIKE!<br>':'')+(ok?'<div class="ar">صحيح ✔</div>':'<div class="ar">إجابة غير صحيحة</div>Jawapan betul: <span class="ar">'+AD[cur.k]+' — '+AW[cur.k]+'</span><br>')+'<br>Pin jatuh: '+n+' · +'+pts+' markah'+(ok?'':' (50%)');
+ if(n===10)sfx('strike');ok?sfx('ok'):sfx('bad');
+ status(ok?'✅ Betul!':'❌ Kurang tepat');showHUD();
+ nextT=setTimeout(()=>{t.className='';nextQ()},3000);
+}
+function endGame(){
+ clearInterval(timerId);phase='idle';sfx('fan');$('toast').className='';
+ const tot=G.ok+G.bad,acc=tot?Math.round(G.ok/tot*100):0;
+ let best=G.score;const lb=getLB();lb.filter(r=>r.name===(S.name||'Murid')).forEach(r=>best=Math.max(best,r.score));
+ if(!S.train&&tot>0){lb.push({name:S.name||'Murid',score:G.score,pins:G.pins,acc,date:new Date().toLocaleDateString('ms-MY')});lb.sort((a,b)=>b.score-a.score);try{localStorage.setItem('abb_lb',JSON.stringify(lb.slice(0,50)))}catch(e){}}
+ $('gScore').textContent=G.score;$('gBest').textContent='Rekod tertinggi peribadi: '+best+(S.train?' (Mod Latihan — tidak disimpan)':'');
+ $('gStats').innerHTML=`<div>Betul<b>${G.ok}</b></div><div>Salah<b>${G.bad}</b></div><div>Pin tumbang<b>${G.pins}</b></div><div>Ketepatan<b>${acc}%</b></div>`;
+ $('mG').classList.add('on');status('Permainan tamat');
+ try{confetti({particleCount:160,spread:90,origin:{y:.6},colors:['#f59e0b','#10b981','#D4AF37','#fff']})}catch(e){}
+}
+function getLB(){try{return JSON.parse(localStorage.getItem('abb_lb')||'[]')}catch(e){return[]}}
+function showLB(){
+ const l=getLB().slice(0,10);
+ $('lbBody').innerHTML=l.length?'<table><tr><th>#</th><th>Nama</th><th>Markah</th><th>Pin</th><th>Tepat</th><th>Tarikh</th></tr>'+l.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td><b>${r.score}</b></td><td>${r.pins}</td><td>${r.acc}%</td><td>${esc(r.date)}</td></tr>`).join('')+'</table>':'<p>Belum ada rekod. Mainkan satu pusingan dahulu!</p>';
+ $('mL').classList.add('on');
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- CONTROLS ---------- */
+$('bStart').onclick=startGame;$('gAgain').onclick=startGame;
+$('bL').onclick=()=>{sfx('click');setAim(aim-.25)};$('bR').onclick=()=>{sfx('click');setAim(aim+.25)};
+$('bThrow').onclick=()=>doThrow(aim,1);
+cv.addEventListener('pointerdown',e=>{if(phase!=='ready')return;const r=cv.getBoundingClientRect();setAim(((e.clientX-r.left)/r.width-.5)*2.2);doThrow(aim,1)});
+$('bLb').onclick=showLB;$('gLb').onclick=()=>{$('mG').classList.remove('on');showLB()};$('lbOk').onclick=()=>$('mL').classList.remove('on');
+$('lbDel').onclick=()=>{if(confirm('Padam semua rekod?')){localStorage.removeItem('abb_lb');showLB()}};
+$('bT').onclick=()=>{$('sName').value=S.name;$('sQ').value=S.q;$('sP').value=S.pin;$('sT').value=S.time;$('sD').value=S.diff;$('sTr').checked=S.train;$('mT').classList.add('on')};
+$('tOk').onclick=()=>{S={name:$('sName').value.trim(),q:+$('sQ').value,pin:+$('sP').value,time:+$('sT').value,diff:$('sD').value,train:$('sTr').checked};
+ try{localStorage.setItem('abb_set',JSON.stringify(S))}catch(e){}
+ $('mT').classList.remove('on');if(!G||phase==='idle'){$('rd').textContent='0/'+S.q;$('tm').textContent=S.time>0?Math.floor(S.time/60)+':00':'∞'}};
+
+/* ---------- MEDIAPIPE POSE ---------- */
+let camOn=false,pose=null,cam=null,pst='low',prev=null,peak=0,swingT=0;
+const ov=$('ov'),oc=ov.getContext('2d');
+$('bCam').onclick=async()=>{
+ initAudio();if(camOn)return;
+ try{
+  if(!window.Pose||!window.Camera)throw new Error('lib');
+  $('camMsg').textContent='Memuatkan model AI...';
+  pose=new Pose({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+f});
+  pose.setOptions({modelComplexity:0,smoothLandmarks:true,minDetectionConfidence:.5,minTrackingConfidence:.5});
+  pose.onResults(onPose);
+  cam=new Camera($('vid'),{onFrame:async()=>{await pose.send({image:$('vid')})},width:480,height:360});
+  await cam.start();camOn=true;$('camMsg').style.display='none';$('bCam').textContent='📷 Kamera AKTIF';
+ }catch(e){$('camMsg').style.display='flex';$('camMsg').innerHTML='Kamera tidak dapat dibuka.<br>Gunakan butang Baling Maya atau sentuh lorong.'}
+};
+function onPose(r){
+ oc.clearRect(0,0,480,360);const L=r.poseLandmarks;if(!L)return;
+ oc.strokeStyle='#10b981';oc.lineWidth=4;oc.shadowColor='#10b981';oc.shadowBlur=10;
+ [[11,13],[13,15],[12,14],[14,16],[11,12]].forEach(([a,b])=>{oc.beginPath();oc.moveTo(L[a].x*480,L[a].y*360);oc.lineTo(L[b].x*480,L[b].y*360);oc.stroke()});
+ oc.fillStyle='#f59e0b';[11,12,13,14,15,16].forEach(i=>{oc.beginPath();oc.arc(L[i].x*480,L[i].y*360,6,0,7);oc.fill()});
+ const now=performance.now();
+ if(phase!=='ready'){prev={t:now,y:[L[15].y,L[16].y]};return}
+ if(!prev){prev={t:now,y:[L[15].y,L[16].y]};return}
+ const dt=(now-prev.t)/1000;if(dt<=0)return;
+ const v=[(prev.y[0]-L[15].y)/dt,(prev.y[1]-L[16].y)/dt];prev={t:now,y:[L[15].y,L[16].y]};
+ const s=v[0]>v[1]?0:1,w=L[15+s],sh=L[11+s],vv=v[s];
+ if(pst==='low'){if(w.y>sh.y+.08){pst='armed';status('✋ Tangan sedia — HAYUN!')}}
+ else if(pst==='armed'){if(vv>1){pst='swing';peak=vv;swingT=now}else if(w.y<sh.y)pst='low'}
+ else if(pst==='swing'){
+  peak=Math.max(peak,vv);
+  if(w.y<sh.y+.03&&vv>.5){doThrow((sh.x-w.x)*4,peak)}
+  else if(now-swingT>1200)pst='low';
+ }
+}
+status('Tekan "Mula Main"');
+$('rd').textContent='0/'+S.q;
+setPins();requestAnimationFrame(loop);
+</script></body></html>
